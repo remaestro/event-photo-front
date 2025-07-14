@@ -1,0 +1,380 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Rechercher des événements</h1>
+      <p class="text-gray-600">Trouvez vos photos d'événements facilement</p>
+    </div>
+
+    <!-- Messages d'erreur/information -->
+    <div *ngIf="searchError" class="mb-6">
+      <div class="bg-red-50 border border-red-200 rounded-md p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700">{{ searchError }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire de recherche -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <!-- Recherche par nom -->
+        <div>
+          <label for="searchTerm" class="block text-sm font-medium text-gray-700 mb-2">
+            Nom de l'événement
+          </label>
+          <input
+            type="text"
+            id="searchTerm"
+            [(ngModel)]="searchFilters.searchTerm"
+            (input)="onSearchInputChange()"
+            placeholder="Ex: Mariage Sophie (min. 2 caractères)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-red-300]="searchFilters.searchTerm && searchFilters.searchTerm.trim().length > 0 && searchFilters.searchTerm.trim().length < 2"
+          >
+          <p *ngIf="searchFilters.searchTerm && searchFilters.searchTerm.trim().length > 0 && searchFilters.searchTerm.trim().length < 2" 
+             class="mt-1 text-xs text-red-600">
+            Minimum 2 caractères requis
+          </p>
+        </div>
+
+        <!-- Recherche par code -->
+        <div>
+          <label for="eventCode" class="block text-sm font-medium text-gray-700 mb-2">
+            Code de l'événement
+          </label>
+          <input
+            type="text"
+            id="eventCode"
+            [(ngModel)]="searchFilters.eventCode"
+            (input)="onSearchInputChange()"
+            placeholder="Ex: EVT-2024-001 (min. 3 caractères)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+            [class.border-red-300]="searchFilters.eventCode && searchFilters.eventCode.trim().length > 0 && searchFilters.eventCode.trim().length < 3"
+          >
+          <p *ngIf="searchFilters.eventCode && searchFilters.eventCode.trim().length > 0 && searchFilters.eventCode.trim().length < 3" 
+             class="mt-1 text-xs text-red-600">
+            Minimum 3 caractères requis
+          </p>
+        </div>
+
+        <!-- Lieu -->
+        <div>
+          <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+            Lieu
+          </label>
+          <input
+            type="text"
+            id="location"
+            [(ngModel)]="searchFilters.location"
+            (input)="onSearchInputChange()"
+            placeholder="Ex: Paris, Château... (min. 2 caractères)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-red-300]="searchFilters.location && searchFilters.location.trim().length > 0 && searchFilters.location.trim().length < 2"
+          >
+          <p *ngIf="searchFilters.location && searchFilters.location.trim().length > 0 && searchFilters.location.trim().length < 2" 
+             class="mt-1 text-xs text-red-600">
+            Minimum 2 caractères requis
+          </p>
+        </div>
+
+        <!-- Date de début -->
+        <div>
+          <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">
+            Date de début
+          </label>
+          <input
+            type="date"
+            id="startDate"
+            [(ngModel)]="searchFilters.startDate"
+            (change)="onSearchInputChange()"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+        </div>
+
+        <!-- Date de fin -->
+        <div>
+          <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">
+            Date de fin
+          </label>
+          <input
+            type="date"
+            id="endDate"
+            [(ngModel)]="searchFilters.endDate"
+            (change)="onSearchInputChange()"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-red-300]="!validateDateRange()"
+          >
+          <p *ngIf="!validateDateRange()" class="mt-1 text-xs text-red-600">
+            La date de fin doit être postérieure à la date de début
+          </p>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex flex-col justify-end space-y-2">
+          <button
+            (click)="searchEvents()"
+            [disabled]="!hasValidSearchCriteria() || isLoading || !validateDateRange()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <span *ngIf="!isLoading" class="flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              Rechercher
+            </span>
+            <span *ngIf="isLoading" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Recherche...
+            </span>
+          </button>
+          
+          <button
+            (click)="openQRScanner()"
+            [disabled]="isLoading"
+            class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors flex items-center justify-center"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
+            </svg>
+            Scanner QR Code
+          </button>
+        </div>
+      </div>
+
+      <!-- Critères actifs -->
+      <div class="mt-4" *ngIf="getActiveCriteriaCount() > 0">
+        <div class="flex items-center text-sm text-gray-600">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          </svg>
+          {{ getActiveCriteriaCount() }} critère(s) de recherche actif(s)
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="mt-6" *ngIf="availableTags.length > 0">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Catégories
+          <span *ngIf="searchFilters.tags?.length" class="text-blue-600 font-normal">
+            ({{ searchFilters.tags.length }} sélectionnée(s))
+          </span>
+        </label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            *ngFor="let tag of availableTags"
+            (click)="toggleTag(tag)"
+            [class]="isTagSelected(tag) 
+              ? 'bg-blue-600 text-white shadow-md transform scale-105' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+            class="px-3 py-1 rounded-full text-sm transition-all duration-200 hover:shadow-md"
+          >
+            <span *ngIf="isTagSelected(tag)">✓</span>
+            {{ tag }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Bouton pour vider les filtres -->
+      <div class="mt-4" *ngIf="hasSearched || getActiveCriteriaCount() > 0">
+        <button
+          (click)="clearFilters()"
+          class="text-red-600 hover:text-red-800 text-sm flex items-center transition-colors"
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+          Effacer tous les filtres
+        </button>
+      </div>
+    </div>
+
+    <!-- Scanner QR Modal -->
+    <div *ngIf="isQRScannerOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="text-center">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Scanner QR Code</h3>
+          
+          <!-- Zone de scan avec effet visuel -->
+          <div class="bg-gray-100 h-64 flex items-center justify-center rounded-lg mb-4 relative overflow-hidden">
+            <div class="text-center z-10">
+              <div class="text-4xl mb-2">📷</div>
+              <p class="text-gray-600 mb-2">{{ qrScanStatus }}</p>
+              
+              <!-- Barre de progression -->
+              <div class="w-32 bg-gray-300 rounded-full h-2 mx-auto">
+                <div 
+                  class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  [style.width.%]="qrScanProgress"
+                ></div>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">{{ qrScanProgress }}%</p>
+            </div>
+            
+            <!-- Effet de scan -->
+            <div *ngIf="qrScanProgress > 0 && qrScanProgress < 100" 
+                 class="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500 to-transparent opacity-30 animate-pulse">
+            </div>
+          </div>
+          
+          <button
+            (click)="closeQRScanner()"
+            class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Résultats de recherche -->
+    <div *ngIf="hasSearched">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">
+          Résultats de recherche
+        </h2>
+        <div class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+          {{ searchResults.length }} événement(s) trouvé(s)
+        </div>
+      </div>
+
+      <div *ngIf="searchResults.length === 0 && !isLoading" class="text-center py-12">
+        <div class="text-6xl mb-4">🔍</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun événement trouvé</h3>
+        <p class="text-gray-600 mb-4">Essayez de modifier vos critères de recherche</p>
+        <div class="text-sm text-gray-500">
+          <p>💡 Conseils de recherche :</p>
+          <ul class="mt-2 space-y-1">
+            <li>• Utilisez des mots-clés plus généraux</li>
+            <li>• Vérifiez l'orthographe</li>
+            <li>• Élargissez la période de dates</li>
+            <li>• Essayez différentes catégories</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" *ngIf="searchResults.length > 0">
+        <div
+          *ngFor="let event of searchResults"
+          class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200"
+          (click)="goToEvent(event.id)"
+        >
+          <div [class]="'h-32 bg-gradient-to-r ' + event.gradient"></div>
+          <div class="p-4">
+            <h3 class="font-semibold text-lg text-gray-900 mb-2">{{ event.name }}</h3>
+            <div class="space-y-1 text-sm text-gray-600">
+              <p class="flex items-center">
+                <span class="mr-2">📅</span>
+                {{ formatDate(event.date) }}
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">📍</span>
+                {{ event.location }}
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">👤</span>
+                {{ event.organizer }}
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">📸</span>
+                {{ event.photoCount }} photos
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">💰</span>
+                {{ event.price }}€ par photo
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">🏷️</span>
+                {{ event.code }}
+              </p>
+            </div>
+            <div class="mt-3">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  *ngFor="let tag of event.tags"
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Événements populaires -->
+    <div *ngIf="!hasSearched && popularEvents.length > 0">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Événements populaires</h2>
+        <div class="text-sm text-gray-500">Les plus consultés</div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          *ngFor="let event of popularEvents"
+          class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 group"
+          (click)="searchPopularEvent(event)"
+        >
+          <div [class]="'h-32 bg-gradient-to-r ' + event.gradient + ' relative'">
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+              <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-semibold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{{ event.name }}</h3>
+            <div class="space-y-1 text-sm text-gray-600">
+              <p class="flex items-center">
+                <span class="mr-2">📅</span>
+                {{ formatDate(event.date) }}
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">📍</span>
+                {{ event.location }}
+              </p>
+              <p class="flex items-center">
+                <span class="mr-2">📸</span>
+                {{ event.photoCount }} photos
+              </p>
+            </div>
+            <div class="mt-3">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  *ngFor="let tag of event.tags.slice(0, 2)"
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                >
+                  {{ tag }}
+                </span>
+                <span *ngIf="event.tags.length > 2" class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                  +{{ event.tags.length - 2 }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-8">
+        <p class="text-gray-600 mb-4">Vous ne trouvez pas votre événement ?</p>
+        <p class="text-sm text-gray-500">
+          Utilisez les filtres ci-dessus pour rechercher par nom, code, lieu ou date
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

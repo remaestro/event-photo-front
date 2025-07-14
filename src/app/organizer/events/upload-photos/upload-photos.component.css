@@ -1,0 +1,338 @@
+/* Upload Photos Component Styles */
+
+/* Aspect ratio utility for photo grid */
+.aspect-w-4 {
+  position: relative;
+  padding-bottom: calc(3 / 4 * 100%);
+}
+
+.aspect-w-4 > * {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* Drag and drop zone animations */
+.drop-zone {
+  transition: all 0.3s ease;
+}
+
+.drop-zone.dragover {
+  transform: scale(1.02);
+  border-color: #3B82F6;
+  background-color: #DBEAFE;
+}
+
+/* Photo card hover effects */
+.photo-card {
+  transition: all 0.2s ease;
+}
+
+.photo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Progress bar animations */
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* Tag animations */
+.tag-enter {
+  animation: tagEnter 0.2s ease-out;
+}
+
+@keyframes tagEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Upload status indicators */
+.status-pending {
+  animation: pulse 2s infinite;
+}
+
+.status-uploading {
+  animation: uploading 1.5s ease-in-out infinite;
+}
+
+.status-completed {
+  animation: success 0.5s ease-out;
+}
+
+.status-error {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes uploading {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes success {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px);
+  }
+}
+
+/* Watermark overlay effect */
+.watermark-overlay {
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: watermarkShine 2s ease-in-out;
+}
+
+@keyframes watermarkShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 640px) {
+  .photo-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .metadata-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1281px) {
+  .photo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Custom scrollbar for metadata sections */
+.metadata-section {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+.metadata-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.metadata-section::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 3px;
+}
+
+.metadata-section::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+.metadata-section::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Loading spinner for upload progress */
+.upload-spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3B82F6;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Tooltip styles for upload status */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #1F2937;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* File input custom styling */
+.file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+  position: absolute;
+  left: -9999px;
+}
+
+/* Batch selection highlight */
+.batch-selected {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Error state animations */
+.error-shake {
+  animation: errorShake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes errorShake {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%, 50%, 70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%, 60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* Success state animation */
+.success-bounce {
+  animation: successBounce 0.6s ease-out;
+}
+
+@keyframes successBounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+/* Focus states for accessibility */
+.focus\:ring-blue-500:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .drop-zone {
+    border-width: 3px;
+  }
+  
+  .photo-card {
+    border-width: 2px;
+  }
+  
+  .status-badge {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .drop-zone,
+  .photo-card,
+  .progress-bar,
+  .upload-spinner {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .upload-controls,
+  .metadata-form,
+  .drop-zone {
+    display: none;
+  }
+  
+  .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

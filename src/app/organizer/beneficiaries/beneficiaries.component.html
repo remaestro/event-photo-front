@@ -1,0 +1,283 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <button 
+        (click)="goBack()"
+        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Retour aux événements
+      </button>
+      
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Gestion des Bénéficiaires</h1>
+          <p class="mt-2 text-gray-600" *ngIf="event">
+            {{ event.name }} - {{ formatDate(event.date) }}
+          </p>
+        </div>
+        <button
+          (click)="toggleAddForm()"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Ajouter un bénéficiaire
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!isLoading">
+      <!-- Revenue Sharing Summary -->
+      <div class="bg-white rounded-lg shadow mb-8 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Répartition des Revenus</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="text-center">
+            <div class="text-3xl font-bold text-green-600">{{ formatCurrency(event?.totalRevenue || 0) }}</div>
+            <div class="text-sm text-gray-500">Revenus totaux</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-blue-600">{{ getOrganizerPercentage() }}%</div>
+            <div class="text-sm text-gray-500">Votre part</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-purple-600">{{ getTotalPercentage() }}%</div>
+            <div class="text-sm text-gray-500">Part des bénéficiaires</div>
+          </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span>Répartition</span>
+            <span>{{ getTotalPercentage() + getOrganizerPercentage() }}% alloués</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+              [style.width.%]="getTotalPercentage() + getOrganizerPercentage()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Beneficiary Form -->
+      <div *ngIf="showAddForm" class="bg-white rounded-lg shadow mb-8 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Ajouter un Bénéficiaire</h3>
+        <form (ngSubmit)="addBeneficiary()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700">Nom complet</label>
+              <input
+                type="text"
+                id="name"
+                [(ngModel)]="beneficiaryForm.name"
+                name="name"
+                required
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Ex: Jean Dupont">
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                id="email"
+                [(ngModel)]="beneficiaryForm.email"
+                name="email"
+                required
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="jean@exemple.com">
+            </div>
+            <div>
+              <label for="percentage" class="block text-sm font-medium text-gray-700">Pourcentage (%)</label>
+              <input
+                type="number"
+                id="percentage"
+                [(ngModel)]="beneficiaryForm.percentage"
+                name="percentage"
+                required
+                min="1"
+                max="100"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="15">
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              (click)="toggleAddForm()"
+              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Envoyer l'invitation
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Beneficiaries List -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Bénéficiaires ({{ beneficiaries.length }})
+          </h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Liste des personnes invitées à partager les revenus de cet événement.
+          </p>
+        </div>
+        
+        <ul *ngIf="beneficiaries.length > 0" class="divide-y divide-gray-200">
+          <li *ngFor="let beneficiary of beneficiaries" class="px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span class="text-sm font-medium text-gray-700">
+                      {{ beneficiary.name.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">{{ beneficiary.name }}</div>
+                  <div class="text-sm text-gray-500">{{ beneficiary.email }}</div>
+                  <div class="text-sm text-gray-500">
+                    Invité le {{ formatDate(beneficiary.invitedDate) }}
+                    <span *ngIf="beneficiary.respondedDate">
+                      • Répondu le {{ formatDate(beneficiary.respondedDate) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-4">
+                <div class="text-right">
+                  <div class="text-sm font-medium text-gray-900">{{ beneficiary.percentage }}%</div>
+                  <div class="text-sm text-gray-500">{{ formatCurrency(beneficiary.totalEarnings) }}</div>
+                </div>
+                
+                <span 
+                  class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                  [ngClass]="getStatusColor(beneficiary.status)">
+                  {{ getStatusText(beneficiary.status) }}
+                </span>
+                
+                <div class="flex space-x-2">
+                  <button
+                    *ngIf="beneficiary.status === 'pending'"
+                    (click)="resendInvitation(beneficiary.id)"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    Renvoyer
+                  </button>
+                  <button
+                    (click)="removeBeneficiary(beneficiary.id)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                    Retirer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+        
+        <div *ngIf="beneficiaries.length === 0" class="px-4 py-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun bénéficiaire</h3>
+          <p class="mt-1 text-sm text-gray-500">Commencez par ajouter des bénéficiaires à votre événement.</p>
+          <div class="mt-6">
+            <button
+              (click)="toggleAddForm()"
+              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Ajouter un bénéficiaire
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Revenue Analytics -->
+      <div class="bg-white rounded-lg shadow mb-8 p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">💰 Analytics des Revenus</h2>
+          <div class="flex space-x-2">
+            <button (click)="distributeRevenue()"
+                    [disabled]="getEventTotalRevenue() === 0"
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+              💸 Distribuer maintenant
+            </button>
+            <button (click)="exportRevenueReport()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+              📊 Exporter rapport
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+            <div class="text-2xl font-bold text-green-600">{{ formatCurrency(calculateOrganizerShare()) }}</div>
+            <div class="text-sm text-gray-600">Votre part ({{ getOrganizerPercentage() }}%)</div>
+          </div>
+          
+          <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+            <div class="text-2xl font-bold text-blue-600">{{ formatCurrency(getTotalBeneficiaryShares()) }}</div>
+            <div class="text-sm text-gray-600">Parts bénéficiaires</div>
+          </div>
+          
+          <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+            <div class="text-2xl font-bold text-purple-600">{{ getDistributionRate().toFixed(1) }}%</div>
+            <div class="text-sm text-gray-600">Taux de répartition</div>
+          </div>
+          
+          <div class="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+            <div class="text-2xl font-bold text-orange-600">{{ getAcceptedBeneficiariesCount() }}</div>
+            <div class="text-sm text-gray-600">Bénéficiaires actifs</div>
+          </div>
+        </div>
+
+        <!-- Revenue Distribution Chart -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-medium text-gray-900 mb-3">Répartition visuelle des revenus</h3>
+          <div class="space-y-2">
+            <!-- Organizer bar -->
+            <div class="flex items-center">
+              <div class="w-24 text-sm text-gray-600">Vous</div>
+              <div class="flex-1 bg-gray-200 rounded-full h-6 mx-3">
+                <div class="bg-green-500 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                     [style.width.%]="getOrganizerPercentage()">
+                  {{ getOrganizerPercentage() }}%
+                </div>
+              </div>
+              <div class="w-20 text-sm text-gray-900 text-right">{{ formatCurrency(calculateOrganizerShare()) }}</div>
+            </div>
+            
+            <!-- Beneficiaries bars -->
+            <div *ngFor="let beneficiary of getAcceptedBeneficiaries()" class="flex items-center">
+              <div class="w-24 text-sm text-gray-600 truncate">{{ beneficiary.name }}</div>
+              <div class="flex-1 bg-gray-200 rounded-full h-6 mx-3">
+                <div class="bg-blue-500 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                     [style.width.%]="beneficiary.percentage">
+                  {{ beneficiary.percentage }}%
+                </div>
+              </div>
+              <div class="w-20 text-sm text-gray-900 text-right">{{ formatCurrency(calculateBeneficiaryShare(beneficiary)) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Connexion à votre compte
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Ou
+        <a routerLink="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+          créez un nouveau compte
+        </a>
+      </p>
+    </div>
+
+    <!-- Comptes de test -->
+    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+      <h3 class="text-sm font-medium text-blue-900 mb-3">🧪 Comptes de test disponibles</h3>
+      <div class="space-y-2">
+        <div *ngFor="let account of defaultAccounts" 
+             class="flex items-center justify-between p-2 bg-white rounded border cursor-pointer hover:bg-gray-50"
+             (click)="fillLoginForm(account.email, account.password)">
+          <div class="flex items-center">
+            <div class="text-lg mr-2">{{ account.role === 'Administrateur' ? '🛡️' : '📸' }}</div>
+            <div>
+              <div class="text-sm font-medium text-gray-900">{{ account.role }}</div>
+              <div class="text-xs text-gray-500">{{ account.email }}</div>
+            </div>
+          </div>
+          <button type="button" 
+                  (click)="quickLogin(account.email); $event.stopPropagation()"
+                  class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700">
+            Connexion rapide
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <form class="mt-8 space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <div>
+          <label for="email-address" class="sr-only">Adresse email</label>
+          <input id="email-address" 
+                 formControlName="email"
+                 type="email" 
+                 required 
+                 class="relative block w-full px-3 py-2 border border-gray-300 rounded-t-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                 placeholder="Adresse email"
+                 [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        </div>
+        <div>
+          <label for="password" class="sr-only">Mot de passe</label>
+          <input id="password" 
+                 formControlName="password"
+                 type="password" 
+                 required 
+                 class="relative block w-full px-3 py-2 border border-gray-300 rounded-b-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                 placeholder="Mot de passe"
+                 [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-md p-3">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-800">{{ errorMessage }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <input id="remember-me" 
+                 formControlName="rememberMe"
+                 type="checkbox" 
+                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+          <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+            Se souvenir de moi
+          </label>
+        </div>
+
+        <div class="text-sm">
+          <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">
+            Mot de passe oublié ?
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" 
+                [disabled]="loginForm.invalid || isLoading"
+                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span *ngIf="isLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          </span>
+          <span *ngIf="!isLoading">Se connecter</span>
+          <span *ngIf="isLoading">Connexion...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,134 @@
+/* Animations personnalisées */
+@keyframes scanLine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+}
+
+/* Effet de focus amélioré pour les inputs */
+.search-input:focus {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Animation pour les cartes d'événements */
+.event-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation pour les tags */
+.tag-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.tag-button:hover {
+  transform: scale(1.05);
+}
+
+.tag-button.selected {
+  animation: pulse-glow 1s ease-in-out;
+}
+
+/* Effet de chargement pour les boutons */
+.loading-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Scanner QR styles */
+.qr-scanner-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.qr-scan-area {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  animation: scanLine 2s linear infinite;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .search-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .event-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .search-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .search-actions button {
+    width: 100%;
+  }
+}
+
+/* Validation styles */
+.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* États des événements */
+.event-status-active {
+  border-left: 4px solid #10b981;
+}
+
+.event-status-upcoming {
+  border-left: 4px solid #3b82f6;
+}
+
+.event-status-past {
+  border-left: 4px solid #6b7280;
+}
+
+/* Amélioration des gradients d'événements */
+.gradient-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.gradient-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.gradient-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.gradient-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.gradient-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.gradient-6 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+.gradient-7 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+.gradient-8 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }

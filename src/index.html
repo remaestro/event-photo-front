@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>EventPhoto - Plateforme de Photos d'Événements</title>
+  <base href="/">
+  
+  <!-- Enhanced Mobile Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=yes, maximum-scale=5">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="EventPhoto">
+  
+  <!-- SEO and Social Meta Tags -->
+  <meta name="description" content="Plateforme de reconnaissance faciale pour retrouver et acheter vos photos d'événements. Organisez, partagez et monétisez vos événements photo.">
+  <meta name="keywords" content="photos événements, reconnaissance faciale, mariage, fête, organisateur">
+  <meta name="author" content="EventPhoto">
+  
+  <!-- Accessibility Meta Tags -->
+  <meta name="color-scheme" content="light dark">
+  
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  
+  <!-- Preconnect for Performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://api.eventphoto.com">
+  
+  <!-- CSS Variables for Accessibility -->
+  <style>
+    :root {
+      --font-size-multiplier: 1;
+      --focus-ring-width: 2px;
+      --focus-ring-color: #3b82f6;
+      --animation-duration: 0.3s;
+      --transition-duration: 0.2s;
+    }
+    
+    /* Enhanced focus styles */
+    *:focus {
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: 2px;
+    }
+    
+    /* Skip links styles */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 6px;
+      background: #000;
+      color: #fff;
+      padding: 8px 16px;
+      text-decoration: none;
+      z-index: 9999;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    
+    .skip-link:focus {
+      top: 6px;
+    }
+    
+    /* Screen reader only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    
+    /* High contrast support */
+    @media (prefers-contrast: high) {
+      :root {
+        --focus-ring-width: 3px;
+      }
+    }
+    
+    /* Touch device optimizations */
+    @media (pointer: coarse) {
+      button, 
+      input, 
+      select, 
+      textarea,
+      .clickable {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+    
+    /* Loading screen */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease-out;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: white;
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    /* Hide loading screen when app is ready */
+    body.app-loaded .loading-screen {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loading-screen" aria-hidden="true">
+    <div class="text-center">
+      <div class="loading-spinner" role="status" aria-label="Chargement en cours"></div>
+      <div class="loading-text">Chargement d'EventPhoto...</div>
+    </div>
+  </div>
+  
+  <!-- Main App -->
+  <app-root></app-root>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // Hide loading screen when app is ready
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        document.body.classList.add('app-loaded');
+        setTimeout(function() {
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.remove();
+          }
+        }, 300);
+      }, 500);
+    });
+    
+    // PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(registration) {
+            console.log('ServiceWorker registered successfully');
+          })
+          .catch(function(error) {
+            console.log('ServiceWorker registration failed');
+          });
+      });
+    }
+    
+    // Accessibility enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+      // Detect keyboard users
+      let isTabPressed = false;
+      
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          isTabPressed = true;
+          document.body.classList.add('keyboard-user');
+        }
+      });
+      
+      document.addEventListener('mousedown', function() {
+        if (isTabPressed) {
+          document.body.classList.remove('keyboard-user');
+          isTabPressed = false;
+        }
+      });
+      
+      // Set ARIA live region for announcements
+      const liveRegion = document.createElement('div');
+      liveRegion.setAttribute('aria-live', 'polite');
+      liveRegion.setAttribute('aria-atomic', 'true');
+      liveRegion.className = 'sr-only';
+      liveRegion.id = 'live-announcements';
+      document.body.appendChild(liveRegion);
+      
+      // Performance monitoring
+      if ('performance' in window) {
+        window.addEventListener('load', function() {
+          const perfData = performance.getEntriesByType('navigation')[0];
+          if (perfData) {
+            console.log('Page Load Time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

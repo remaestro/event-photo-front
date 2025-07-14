@@ -1,0 +1,314 @@
+<nav class="bg-white shadow-md sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex-shrink-0">
+        <a routerLink="/" class="flex items-center">
+          <span class="text-2xl font-bold text-indigo-600">EventPhoto</span>
+        </a>
+      </div>
+
+      <!-- Navigation Desktop -->
+      <div class="hidden md:block">
+        <div class="ml-10 flex items-baseline space-x-4">
+          <a routerLink="/events/search" 
+             routerLinkActive="text-indigo-600 border-b-2 border-indigo-600"
+             class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">
+            Rechercher des événements
+          </a>
+          <a routerLink="/how-it-works" 
+             routerLinkActive="text-indigo-600 border-b-2 border-indigo-600"
+             class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">
+            Comment ça marche
+          </a>
+          <!-- Navigation spécifique selon le rôle -->
+          <a *ngIf="userRole === 'Organizer'" 
+             routerLink="/organizer/events" 
+             routerLinkActive="text-indigo-600 border-b-2 border-indigo-600"
+             class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">
+            Mes Événements
+          </a>
+          <a *ngIf="userRole === 'Admin'" 
+             routerLink="/admin/events" 
+             routerLinkActive="text-indigo-600 border-b-2 border-indigo-600"
+             class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">
+            Tous les Événements
+          </a>
+        </div>
+      </div>
+
+      <!-- Actions utilisateur Desktop -->
+      <div class="hidden md:block">
+        <div class="ml-4 flex items-center md:ml-6 space-x-4">
+          <!-- Cart Indicator -->
+          <button (click)="goToCart()" 
+                  class="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h12.6M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z">
+              </path>
+            </svg>
+            <!-- Cart count badge -->
+            <span *ngIf="hasCartItems()" 
+                  class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+              {{ cartSummary.totalItems > 99 ? '99+' : cartSummary.totalItems }}
+            </span>
+          </button>
+
+          <!-- Utilisateur non connecté -->
+          <div *ngIf="!isUserLoggedIn" class="flex space-x-4">
+            <a routerLink="/login" 
+               class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">
+              Connexion
+            </a>
+            <a routerLink="/register" 
+               class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+              Inscription
+            </a>
+          </div>
+
+          <!-- Utilisateur connecté -->
+          <div *ngIf="isUserLoggedIn" class="relative" [class.show]="isMenuOpen">
+            <button (click)="toggleMenu()" 
+                    class="flex items-center text-sm rounded-full text-gray-700 hover:text-indigo-600 focus:outline-none">
+              <span class="sr-only">Ouvrir le menu utilisateur</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Dropdown menu -->
+            <div *ngIf="isMenuOpen" 
+                 class="origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+              <div class="py-1">
+                <!-- Cart Summary in Dropdown -->
+                <div *ngIf="hasCartItems()" class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-900">Mon Panier</span>
+                    <span class="text-sm text-gray-600">{{ cartSummary.totalItems }} article(s)</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    Total: {{ formatPrice(cartSummary.totalPrice) }}€
+                  </div>
+                  <button (click)="goToCart()" 
+                          class="mt-2 w-full bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition-colors">
+                    Voir le panier
+                  </button>
+                </div>
+
+                <!-- Menu Organisateur -->
+                <div *ngIf="userRole === 'Organizer'">
+                  <a routerLink="/organizer/dashboard" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    📊 Dashboard
+                  </a>
+                  <a routerLink="/organizer/events" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    📅 Mes Événements
+                  </a>
+                  <a routerLink="/organizer/photos" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    📸 Mes Photos
+                  </a>
+                  <a routerLink="/organizer/beneficiaries" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    👥 Bénéficiaires
+                  </a>
+                </div>
+
+                <!-- Menu Administrateur -->
+                <div *ngIf="userRole === 'Admin'">
+                  <a routerLink="/admin/dashboard" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    🔧 Dashboard Admin
+                  </a>
+                  <a routerLink="/admin/events" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    📅 Tous les Événements
+                  </a>
+                  <a routerLink="/admin/users" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    👤 Gestion Utilisateurs
+                  </a>
+                  <a routerLink="/admin/moderation" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    🛡️ Modération
+                  </a>
+                  <a routerLink="/admin/statistics" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    📈 Statistiques
+                  </a>
+                  <a routerLink="/admin/settings" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    ⚙️ Configuration
+                  </a>
+                </div>
+
+                <!-- Menu Client (achats) -->
+                <div *ngIf="isUserLoggedIn">
+                  <div class="border-t border-gray-100"></div>
+                  <a routerLink="/profile" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    👤 Mon Profil
+                  </a>
+                  <a routerLink="/my-purchases" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    🛒 Mes Achats
+                  </a>
+                  <a routerLink="/cart" (click)="closeMenu()"
+                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between">
+                     <span>🛍️ Panier</span>
+                     <span *ngIf="hasCartItems()" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                       {{ cartSummary.totalItems }}
+                     </span>
+                  </a>
+                </div>
+
+                <div class="border-t border-gray-100"></div>
+                <button (click)="logout()" 
+                        class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  🚪 Déconnexion
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bouton menu mobile + Cart -->
+      <div class="md:hidden flex items-center space-x-2">
+        <!-- Mobile Cart Button -->
+        <button (click)="goToCart()" 
+                class="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h12.6M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z">
+            </path>
+          </svg>
+          <span *ngIf="hasCartItems()" 
+                class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+            {{ cartSummary.totalItems > 99 ? '99+' : cartSummary.totalItems }}
+          </span>
+        </button>
+
+        <!-- Mobile Menu Button -->
+        <button (click)="toggleMenu()" 
+                class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none">
+          <span class="sr-only">Ouvrir le menu principal</span>
+          <svg *ngIf="!isMenuOpen" class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <svg *ngIf="isMenuOpen" class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu mobile -->
+  <div *ngIf="isMenuOpen" class="md:hidden">
+    <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+      <!-- Navigation principale -->
+      <a routerLink="/events/search" (click)="closeMenu()"
+         routerLinkActive="text-indigo-600 bg-indigo-50"
+         class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+        Rechercher des événements
+      </a>
+      <a routerLink="/how-it-works" (click)="closeMenu()"
+         routerLinkActive="text-indigo-600 bg-indigo-50"
+         class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+        Comment ça marche
+      </a>
+
+      <!-- Navigation spécifique selon le rôle -->
+      <a *ngIf="userRole === 'Organizer'" 
+         routerLink="/organizer/events" (click)="closeMenu()"
+         routerLinkActive="text-indigo-600 bg-indigo-50"
+         class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+        📅 Mes Événements
+      </a>
+      <a *ngIf="userRole === 'Admin'" 
+         routerLink="/admin/events" (click)="closeMenu()"
+         routerLinkActive="text-indigo-600 bg-indigo-50"
+         class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+        📅 Tous les Événements
+      </a>
+
+      <!-- Utilisateur non connecté -->
+      <div *ngIf="!isUserLoggedIn" class="border-t border-gray-200 pt-4">
+        <a routerLink="/login" (click)="closeMenu()"
+           class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+          Connexion
+        </a>
+        <a routerLink="/register" (click)="closeMenu()"
+           class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+          Inscription
+        </a>
+      </div>
+
+      <!-- Utilisateur connecté -->
+      <div *ngIf="isUserLoggedIn" class="border-t border-gray-200 pt-4">
+        <!-- Menu Organisateur -->
+        <div *ngIf="userRole === 'Organizer'">
+          <a routerLink="/organizer/dashboard" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            📊 Dashboard
+          </a>
+          <a routerLink="/organizer/photos" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            📸 Mes Photos
+          </a>
+          <a routerLink="/organizer/beneficiaries" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            👥 Bénéficiaires
+          </a>
+        </div>
+
+        <!-- Menu Administrateur -->
+        <div *ngIf="userRole === 'Admin'">
+          <a routerLink="/admin/dashboard" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            🔧 Dashboard Admin
+          </a>
+          <a routerLink="/admin/users" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            👤 Gestion Utilisateurs
+          </a>
+          <a routerLink="/admin/moderation" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            🛡️ Modération
+          </a>
+          <a routerLink="/admin/statistics" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            📈 Statistiques
+          </a>
+          <a routerLink="/admin/settings" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            ⚙️ Configuration
+          </a>
+        </div>
+
+        <!-- Menu Achats (pour tous) -->
+        <div class="border-t border-gray-200 pt-2">
+          <a routerLink="/my-purchases" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            🛒 Mes Achats
+          </a>
+          <a routerLink="/cart" (click)="closeMenu()"
+             class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block px-3 py-2 text-base font-medium">
+            🛍️ Panier
+          </a>
+        </div>
+
+        <button (click)="logout()" 
+                class="text-gray-700 hover:text-indigo-600 hover:bg-gray-50 block w-full text-left px-3 py-2 text-base font-medium border-t border-gray-200 mt-2 pt-4">
+          🚪 Déconnexion
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

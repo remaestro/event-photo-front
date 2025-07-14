@@ -1,0 +1,161 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="container mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard Photographe</h1>
+      <p class="text-gray-600">Gérez vos photos et suivez vos ventes</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement de vos données...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">📸</div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.totalPhotos }}</p>
+              <p class="text-gray-600">Photos vendues</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">💰</div>
+            <div>
+              <p class="text-2xl font-bold text-green-600">{{ formatCurrency(stats.totalEarnings) }}</p>
+              <p class="text-gray-600">Revenus totaux</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">🛒</div>
+            <div>
+              <p class="text-2xl font-bold text-blue-600">{{ stats.totalSales }}</p>
+              <p class="text-gray-600">Ventes totales</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">📅</div>
+            <div>
+              <p class="text-2xl font-bold text-purple-600">{{ stats.eventsCount }}</p>
+              <p class="text-gray-600">Événements</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Actions rapides</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button (click)="navigateTo('/photographer/upload')" 
+                  class="bg-indigo-600 text-white p-4 rounded-lg hover:bg-indigo-700 transition-colors text-center">
+            <div class="text-2xl mb-2">📤</div>
+            <div class="text-sm font-medium">Uploader des photos</div>
+          </button>
+          
+          <button (click)="navigateTo('/photographer/events')" 
+                  class="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors text-center">
+            <div class="text-2xl mb-2">📅</div>
+            <div class="text-sm font-medium">Créer un événement</div>
+          </button>
+          
+          <button (click)="navigateTo('/photographer/photos')" 
+                  class="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors text-center">
+            <div class="text-2xl mb-2">🖼️</div>
+            <div class="text-sm font-medium">Gérer mes photos</div>
+          </button>
+          
+          <button (click)="navigateTo('/photographer/wallet')" 
+                  class="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors text-center">
+            <div class="text-2xl mb-2">💳</div>
+            <div class="text-sm font-medium">Voir le portefeuille</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Recent Sales -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Ventes récentes</h3>
+          <div class="space-y-4">
+            <div *ngFor="let sale of recentSales" class="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-200 to-purple-200 rounded-lg mr-3 flex items-center justify-center">
+                  <span class="text-xs font-bold text-gray-700">📷</span>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900">{{ sale.photoId }}</p>
+                  <p class="text-sm text-gray-600">{{ sale.eventName }}</p>
+                  <p class="text-xs text-gray-500">{{ sale.buyerName }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-green-600">{{ formatCurrency(sale.amount) }}</p>
+                <p class="text-xs text-gray-500">{{ formatDate(sale.date) }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="recentSales.length === 0" class="text-center py-8">
+              <div class="text-4xl mb-4">💰</div>
+              <p class="text-gray-500">Aucune vente récente</p>
+            </div>
+          </div>
+          <button (click)="navigateTo('/photographer/sales')" 
+                  class="w-full mt-4 text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            Voir toutes les ventes →
+          </button>
+        </div>
+
+        <!-- Recent Photos -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Photos récentes</h3>
+          <div class="grid grid-cols-3 gap-3">
+            <div *ngFor="let photo of recentPhotos" class="aspect-square bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center text-gray-500 text-sm">
+              📷 {{ photo.id }}
+            </div>
+            
+            <div *ngIf="recentPhotos.length === 0" class="col-span-3 text-center py-8">
+              <div class="text-4xl mb-4">📸</div>
+              <p class="text-gray-500 mb-4">Aucune photo récente</p>
+              <button (click)="navigateTo('/photographer/upload')" 
+                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Uploader des photos
+              </button>
+            </div>
+          </div>
+          <button (click)="navigateTo('/photographer/photos')" 
+                  class="w-full mt-4 text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            Voir toutes les photos →
+          </button>
+        </div>
+      </div>
+
+      <!-- Monthly Revenue Chart Placeholder -->
+      <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Revenus des 6 derniers mois</h3>
+        <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+          <div class="text-center">
+            <div class="text-4xl mb-2">📊</div>
+            <p>Graphique des revenus</p>
+            <p class="text-sm">(À implémenter avec Chart.js)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

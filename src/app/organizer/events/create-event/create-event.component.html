@@ -1,0 +1,326 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            {{ getPageTitle() }}
+          </h1>
+          <p class="text-gray-600 mt-2">{{ getPageDescription() }}</p>
+        </div>
+        <button (click)="onCancel()" 
+                class="text-gray-600 hover:text-gray-800 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement des données...</p>
+    </div>
+
+    <!-- Form -->
+    <form *ngIf="!isLoading" [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="space-y-8">
+      <!-- Basic Information -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Informations de base</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Event Name -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nom de l'événement *
+            </label>
+            <input 
+              type="text" 
+              formControlName="name"
+              placeholder="Ex: Mariage Sophie & Marc"
+              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
+                      (isFieldInvalid('name') ? 'border-red-300' : 'border-gray-300')">
+            <div *ngIf="isFieldInvalid('name')" class="mt-1 text-sm text-red-600">
+              {{ getFieldError('name') }}
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Date de l'événement *
+            </label>
+            <input 
+              type="date" 
+              formControlName="date"
+              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
+                      (isFieldInvalid('date') ? 'border-red-300' : 'border-gray-300')">
+            <div *ngIf="isFieldInvalid('date')" class="mt-1 text-sm text-red-600">
+              {{ getFieldError('date') }}
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Lieu *
+            </label>
+            <input 
+              type="text" 
+              formControlName="location"
+              placeholder="Ex: Château de Versailles"
+              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
+                      (isFieldInvalid('location') ? 'border-red-300' : 'border-gray-300')">
+            <div *ngIf="isFieldInvalid('location')" class="mt-1 text-sm text-red-600">
+              {{ getFieldError('location') }}
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea 
+              formControlName="description"
+              rows="3"
+              placeholder="Décrivez votre événement..."
+              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
+                      (isFieldInvalid('description') ? 'border-red-300' : 'border-gray-300')"></textarea>
+            <div *ngIf="isFieldInvalid('description')" class="mt-1 text-sm text-red-600">
+              {{ getFieldError('description') }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Paramètres</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Visibility -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Visibilité *
+            </label>
+            <div class="space-y-3">
+              <label class="flex items-center">
+                <input 
+                  type="radio" 
+                  formControlName="visibility" 
+                  value="public"
+                  class="text-blue-600 focus:ring-blue-500">
+                <span class="ml-3">
+                  <span class="text-gray-900 font-medium">🌍 Public</span>
+                  <span class="block text-sm text-gray-600">Visible par tous, recherchable</span>
+                </span>
+              </label>
+              <label class="flex items-center">
+                <input 
+                  type="radio" 
+                  formControlName="visibility" 
+                  value="private"
+                  class="text-blue-600 focus:ring-blue-500">
+                <span class="ml-3">
+                  <span class="text-gray-900 font-medium">🔒 Privé</span>
+                  <span class="block text-sm text-gray-600">Accessible uniquement par code</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Prix par photo (€) *
+            </label>
+            <input 
+              type="number" 
+              formControlName="photoPrice"
+              step="0.01"
+              min="0.50"
+              max="99.99"
+              placeholder="8.99"
+              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
+                      (isFieldInvalid('photoPrice') ? 'border-red-300' : 'border-gray-300')">
+            <div *ngIf="isFieldInvalid('photoPrice')" class="mt-1 text-sm text-red-600">
+              {{ getFieldError('photoPrice') }}
+            </div>
+            <p class="mt-1 text-sm text-gray-600">Prix recommandé: 5€ - 15€</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Tags</h2>
+        
+        <!-- Current Tags -->
+        <div *ngIf="tags.length > 0" class="flex flex-wrap gap-2 mb-4">
+          <span *ngFor="let tag of tags.controls; let i = index" 
+                class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+            #{{ tag.value }}
+            <button type="button" 
+                    (click)="removeTag(i)"
+                    class="ml-2 text-blue-600 hover:text-blue-800">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </span>
+        </div>
+
+        <!-- Add Tag Input -->
+        <div class="relative">
+          <div class="flex">
+            <input 
+              type="text" 
+              [(ngModel)]="currentTag"
+              [ngModelOptions]="{standalone: true}"
+              (input)="onTagInputChange($event)"
+              (keydown)="onTagKeyDown($event)"
+              placeholder="Ajouter un tag (ex: mariage, festival...)"
+              class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            <button type="button" 
+                    (click)="addTag()"
+                    [disabled]="!currentTag.trim()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
+              Ajouter
+            </button>
+          </div>
+
+          <!-- Tag Suggestions -->
+          <div *ngIf="showTagSuggestions" 
+               class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+            <button type="button"
+                    *ngFor="let suggestion of filteredTags"
+                    (click)="addTag(suggestion)"
+                    class="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+              #{{ suggestion }}
+            </button>
+          </div>
+        </div>
+
+        <p class="mt-2 text-sm text-gray-600">
+          Les tags aident les clients à trouver votre événement plus facilement
+        </p>
+      </div>
+
+      <!-- Beneficiaries -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Bénéficiaires</h2>
+            <p class="text-sm text-gray-600 mt-1">Partagez vos revenus avec d'autres personnes</p>
+          </div>
+          <button type="button" 
+                  (click)="addBeneficiary()"
+                  class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Ajouter un bénéficiaire
+          </button>
+        </div>
+
+        <!-- Beneficiaries List -->
+        <div *ngIf="beneficiariesFormArray.length > 0" class="space-y-4">
+          <div *ngFor="let beneficiary of beneficiariesFormArray.controls; let i = index" 
+               [formGroup]="$any(beneficiary)"
+               class="border border-gray-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-medium text-gray-900">Bénéficiaire {{ i + 1 }}</h4>
+              <button type="button" 
+                      (click)="removeBeneficiary(i)"
+                      class="text-red-600 hover:text-red-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                <input 
+                  type="text" 
+                  formControlName="name"
+                  placeholder="Nom du bénéficiaire"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <input 
+                  type="email" 
+                  formControlName="email"
+                  placeholder="email@exemple.com"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pourcentage (%) *</label>
+                <input 
+                  type="number" 
+                  formControlName="percentage"
+                  min="1"
+                  max="90"
+                  placeholder="10"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Percentage Summary -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-600">Total des pourcentages:</span>
+              <span [class]="getTotalBeneficiaryPercentage() > 100 ? 'text-red-600 font-bold' : 'text-gray-900'">
+                {{ getTotalBeneficiaryPercentage() }}%
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-sm mt-1">
+              <span class="text-gray-600">Votre part:</span>
+              <span class="text-green-600 font-medium">{{ getRemainingPercentage() }}%</span>
+            </div>
+            <div *ngIf="getTotalBeneficiaryPercentage() > 100" class="mt-2 text-sm text-red-600">
+              ⚠️ Le total ne peut pas dépasser 100%
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="beneficiariesFormArray.length === 0" class="text-center py-8 text-gray-500">
+          <div class="text-4xl mb-2">👥</div>
+          <p>Aucun bénéficiaire ajouté</p>
+          <p class="text-sm">Vous recevrez 100% des revenus</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+        <button type="button" 
+                (click)="onCancel()"
+                class="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+          Annuler
+        </button>
+
+        <div class="flex space-x-4">
+          <button type="button" 
+                  (click)="previewEvent()"
+                  [disabled]="eventForm.invalid"
+                  class="px-6 py-3 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Aperçu
+          </button>
+
+          <button type="submit" 
+                  [disabled]="eventForm.invalid || isSubmitting"
+                  class="px-8 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+            <div *ngIf="isSubmitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            {{ getSubmitButtonText() }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,242 @@
+<!-- Accessibility Panel Toggle Button -->
+<button
+  (click)="togglePanel()"
+  [attr.aria-expanded]="isOpen"
+  [attr.aria-describedby]="isOpen ? 'accessibility-panel-description' : null"
+  class="fixed bottom-4 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+  aria-label="Ouvrir les options d'accessibilité"
+  title="Ouvrir les options d'accessibilité (Alt+A)">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </svg>
+</button>
+
+<!-- Accessibility Panel -->
+<div
+  *ngIf="isOpen"
+  id="accessibility-panel"
+  role="dialog"
+  aria-labelledby="accessibility-panel-title"
+  aria-describedby="accessibility-panel-description"
+  [class]="getPanelPosition() + ' ' + getPanelWidth() + ' bg-white border border-gray-200 rounded-lg shadow-xl z-40 max-h-96 overflow-y-auto'"
+  [attr.aria-hidden]="!isOpen">
+  
+  <!-- Panel Header -->
+  <div class="flex items-center justify-between p-4 border-b border-gray-200">
+    <div>
+      <h2 id="accessibility-panel-title" class="text-lg font-semibold text-gray-900">
+        Paramètres d'accessibilité
+      </h2>
+      <p id="accessibility-panel-description" class="text-sm text-gray-600">
+        Personnalisez votre expérience de navigation
+      </p>
+    </div>
+    <button
+      (click)="togglePanel()"
+      class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
+      aria-label="Fermer les options d'accessibilité">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Panel Content -->
+  <div class="p-4 space-y-6">
+    
+    <!-- Font Size -->
+    <div class="space-y-3">
+      <label for="font-size-select" class="block text-sm font-medium text-gray-700">
+        Taille du texte
+      </label>
+      <select
+        id="font-size-select"
+        [value]="settings.fontSize"
+        (change)="updateFontSize($any($event.target).value)"
+        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        [attr.aria-describedby]="'font-size-help'">
+        <option *ngFor="let option of fontSizeOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <p id="font-size-help" class="text-xs text-gray-500">
+        {{ getFontSizeDescription() }}
+      </p>
+    </div>
+
+    <!-- Contrast -->
+    <div class="space-y-3">
+      <label for="contrast-select" class="block text-sm font-medium text-gray-700">
+        Contraste
+      </label>
+      <select
+        id="contrast-select"
+        [value]="settings.contrast"
+        (change)="updateContrast($any($event.target).value)"
+        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        [attr.aria-describedby]="'contrast-help'">
+        <option *ngFor="let option of contrastOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <p id="contrast-help" class="text-xs text-gray-500">
+        {{ getContrastDescription() }}
+      </p>
+    </div>
+
+    <!-- Toggle Options -->
+    <div class="space-y-4">
+      
+      <!-- Reduced Motion -->
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <label for="reduced-motion" class="block text-sm font-medium text-gray-700">
+            Réduire les animations
+          </label>
+          <p class="text-xs text-gray-500">
+            Désactive les animations et transitions
+          </p>
+        </div>
+        <button
+          id="reduced-motion"
+          role="switch"
+          [attr.aria-checked]="settings.reducedMotion"
+          (click)="toggleReducedMotion()"
+          [class]="settings.reducedMotion ? 
+            'bg-blue-600 focus:ring-blue-500' : 
+            'bg-gray-200 focus:ring-gray-500'"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span
+            [class]="settings.reducedMotion ? 'translate-x-5' : 'translate-x-0'"
+            class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+          </span>
+        </button>
+      </div>
+
+      <!-- Screen Reader Mode -->
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <label for="screen-reader-mode" class="block text-sm font-medium text-gray-700">
+            Mode lecteur d'écran
+          </label>
+          <p class="text-xs text-gray-500">
+            Optimise l'interface pour les lecteurs d'écran
+          </p>
+        </div>
+        <button
+          id="screen-reader-mode"
+          role="switch"
+          [attr.aria-checked]="settings.screenReaderMode"
+          (click)="toggleScreenReaderMode()"
+          [class]="settings.screenReaderMode ? 
+            'bg-blue-600 focus:ring-blue-500' : 
+            'bg-gray-200 focus:ring-gray-500'"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span
+            [class]="settings.screenReaderMode ? 'translate-x-5' : 'translate-x-0'"
+            class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+          </span>
+        </button>
+      </div>
+
+      <!-- Keyboard Navigation -->
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <label for="keyboard-navigation" class="block text-sm font-medium text-gray-700">
+            Navigation clavier
+          </label>
+          <p class="text-xs text-gray-500">
+            Active la navigation complète au clavier
+          </p>
+        </div>
+        <button
+          id="keyboard-navigation"
+          role="switch"
+          [attr.aria-checked]="settings.keyboardNavigation"
+          (click)="toggleKeyboardNavigation()"
+          [class]="settings.keyboardNavigation ? 
+            'bg-blue-600 focus:ring-blue-500' : 
+            'bg-gray-200 focus:ring-gray-500'"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span
+            [class]="settings.keyboardNavigation ? 'translate-x-5' : 'translate-x-0'"
+            class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+          </span>
+        </button>
+      </div>
+
+      <!-- Focus Indicators -->
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <label for="focus-indicators" class="block text-sm font-medium text-gray-700">
+            Indicateurs de focus
+          </label>
+          <p class="text-xs text-gray-500">
+            Affiche des bordures visibles sur les éléments focusés
+          </p>
+        </div>
+        <button
+          id="focus-indicators"
+          role="switch"
+          [attr.aria-checked]="settings.focusIndicators"
+          (click)="toggleFocusIndicators()"
+          [class]="settings.focusIndicators ? 
+            'bg-blue-600 focus:ring-blue-500' : 
+            'bg-gray-200 focus:ring-gray-500'"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span
+            [class]="settings.focusIndicators ? 'translate-x-5' : 'translate-x-0'"
+            class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Info -->
+    <div class="bg-gray-50 rounded-lg p-3">
+      <h3 class="text-sm font-medium text-gray-900 mb-2">Raccourcis clavier</h3>
+      <div class="text-xs text-gray-600 space-y-1">
+        <div class="flex justify-between">
+          <span>Ouvrir ce panneau:</span>
+          <kbd class="bg-white px-1 rounded border">Alt + A</kbd>
+        </div>
+        <div class="flex justify-between">
+          <span>Agrandir le texte:</span>
+          <kbd class="bg-white px-1 rounded border">Ctrl + +</kbd>
+        </div>
+        <div class="flex justify-between">
+          <span>Réduire le texte:</span>
+          <kbd class="bg-white px-1 rounded border">Ctrl + -</kbd>
+        </div>
+        <div class="flex justify-between">
+          <span>Changer contraste:</span>
+          <kbd class="bg-white px-1 rounded border">Ctrl + Shift + C</kbd>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3">
+      <button
+        (click)="runAccessibilityCheck()"
+        class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm font-medium transition-colors">
+        Vérifier l'accessibilité
+      </button>
+      <button
+        (click)="resetToDefaults()"
+        class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-sm font-medium transition-colors">
+        Réinitialiser
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay for mobile -->
+<div
+  *ngIf="isOpen && viewport.isMobile"
+  class="fixed inset-0 bg-black bg-opacity-25 z-30"
+  (click)="togglePanel()"
+  aria-hidden="true">
+</div>

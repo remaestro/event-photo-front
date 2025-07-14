@@ -1,0 +1,339 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center space-x-4">
+          <button (click)="goBack()" 
+                  class="text-gray-500 hover:text-gray-700 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Upload de Photos</h1>
+            <p class="text-sm text-gray-500" *ngIf="event">
+              Événement: {{ event.name }} - {{ event.date | date:'short' }}
+            </p>
+          </div>
+        </div>
+        
+        <!-- Upload Statistics -->
+        <div class="flex items-center space-x-6 text-sm">
+          <div class="text-center">
+            <div class="font-semibold text-gray-900">{{ photos.length }}</div>
+            <div class="text-gray-500">Photos</div>
+          </div>
+          <div class="text-center">
+            <div class="font-semibold text-green-600">{{ completedPhotosCount }}</div>
+            <div class="text-gray-500">Uploadées</div>
+          </div>
+          <div class="text-center" *ngIf="failedPhotosCount > 0">
+            <div class="font-semibold text-red-600">{{ failedPhotosCount }}</div>
+            <div class="text-gray-500">Échecs</div>
+          </div>
+          <div class="text-center">
+            <div class="font-semibold text-blue-600">{{ totalSize }}</div>
+            <div class="text-gray-500">Taille totale</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Upload Zone -->
+    <div class="mb-8">
+      <div #dropZone
+           class="border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer"
+           [class.border-blue-400]="!isDragOver"
+           [class.bg-blue-50]="!isDragOver"
+           [class.border-blue-600]="isDragOver"
+           [class.bg-blue-100]="isDragOver"
+           (click)="onDropZoneClick()"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)">
+        
+        <input #fileInput
+               type="file" 
+               multiple 
+               accept="image/*"
+               class="hidden"
+               (change)="onFileSelect($event)">
+        
+        <div class="text-6xl mb-4 text-blue-400">
+          📷
+        </div>
+        
+        <div class="text-xl font-semibold text-gray-700 mb-2">
+          Glissez-déposez vos photos ici
+        </div>
+        
+        <div class="text-gray-500 mb-4">
+          ou cliquez pour sélectionner des fichiers
+        </div>
+        
+        <div class="text-sm text-gray-400">
+          Formats acceptés: JPEG, PNG, WebP • Taille max: {{ formatFileSize(maxFileSize) }} • Max {{ maxFiles }} fichiers
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Metadata Panel -->
+    <div class="bg-white rounded-lg shadow-sm border mb-6" *ngIf="photos.length > 0">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Métadonnées en lot</h3>
+        
+        <form [formGroup]="metadataForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Tags (séparés par des virgules)
+              </label>
+              <input type="text" 
+                     formControlName="bulkTags"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                     placeholder="mariage, famille, groupe, sourire...">
+              
+              <!-- Tag suggestions -->
+              <div class="mt-2 flex flex-wrap gap-1">
+                <button *ngFor="let tag of suggestedTags.slice(0, 10)" 
+                        type="button"
+                        class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                        (click)="metadataForm.patchValue({bulkTags: (metadataForm.value.bulkTags ? metadataForm.value.bulkTags + ', ' : '') + tag})">
+                  {{ tag }}
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Description par défaut
+              </label>
+              <textarea formControlName="bulkDescription"
+                        rows="3"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Description qui sera appliquée aux photos sans description..."></textarea>
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <label class="flex items-center">
+              <input type="checkbox" 
+                     formControlName="applyToSelected"
+                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <span class="ml-2 text-sm text-gray-700">
+                Appliquer uniquement aux photos sélectionnées ({{ selectedPhotosCount }})
+              </span>
+            </label>
+            
+            <div class="flex space-x-2">
+              <button type="button"
+                      (click)="selectAllPhotos()"
+                      class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                Tout sélectionner
+              </button>
+              <button type="button"
+                      (click)="deselectAllPhotos()"
+                      class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors">
+                Tout désélectionner
+              </button>
+              <button type="button"
+                      (click)="applyBulkMetadata()"
+                      class="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+                Appliquer
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Upload Controls -->
+    <div class="bg-white rounded-lg shadow-sm border mb-6" *ngIf="photos.length > 0">
+      <div class="p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button (click)="startUpload()"
+                    [disabled]="!canStartUpload"
+                    [class.opacity-50]="!canStartUpload"
+                    [class.cursor-not-allowed]="!canStartUpload"
+                    class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium">
+              <span *ngIf="!isUploading">🚀 Démarrer l'upload</span>
+              <span *ngIf="isUploading">⏳ Upload en cours...</span>
+            </button>
+            
+            <button (click)="retryFailedUploads()"
+                    *ngIf="failedPhotosCount > 0 && !isUploading"
+                    class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors">
+              🔄 Réessayer les échecs
+            </button>
+            
+            <button (click)="clearCompletedPhotos()"
+                    *ngIf="completedPhotosCount > 0 && !isUploading"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+              🗑️ Nettoyer les photos uploadées
+            </button>
+          </div>
+          
+          <!-- Overall Progress -->
+          <div class="flex items-center space-x-4" *ngIf="isUploading || uploadSession">
+            <div class="text-sm text-gray-600">
+              {{ getOverallProgress() | number:'1.0-0' }}% complété
+            </div>
+            
+            <div class="w-32 bg-gray-200 rounded-full h-2">
+              <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                   [style.width.%]="getOverallProgress()"></div>
+            </div>
+            
+            <div class="text-sm text-gray-500" *ngIf="getUploadTimeRemaining()">
+              {{ getUploadTimeRemaining() }} restant
+            </div>
+          </div>
+        </div>
+        
+        <!-- Session Info -->
+        <div class="mt-4 text-sm text-gray-600" *ngIf="uploadSession && uploadSession.isActive">
+          Upload de {{ uploadSession.totalFiles }} photos • 
+          {{ uploadSession.completedFiles }} complétées • 
+          {{ uploadSession.failedFiles }} échecs • 
+          {{ formatFileSize(uploadSession.uploadedSize) }} / {{ formatFileSize(uploadSession.totalSize) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="photos.length > 0">
+      <div *ngFor="let photo of photos; trackBy: trackByPhotoId" 
+           class="bg-white rounded-lg shadow-sm border overflow-hidden">
+        
+        <!-- Photo Preview -->
+        <div class="relative aspect-w-4 aspect-h-3">
+          <img [src]="photo.preview" 
+               [alt]="photo.name"
+               class="w-full h-48 object-cover">
+          
+          <!-- Selection Checkbox -->
+          <div class="absolute top-2 left-2">
+            <input type="checkbox"
+                   [checked]="selectedPhotos.has(photo.id)"
+                   (change)="togglePhotoSelection(photo.id)"
+                   class="w-5 h-5 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500">
+          </div>
+          
+          <!-- Status Badge -->
+          <div class="absolute top-2 right-2">
+            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': photo.uploadStatus === 'pending',
+                    'bg-blue-100 text-blue-800': photo.uploadStatus === 'uploading',
+                    'bg-green-100 text-green-800': photo.uploadStatus === 'completed',
+                    'bg-red-100 text-red-800': photo.uploadStatus === 'error'
+                  }">
+              <span *ngIf="photo.uploadStatus === 'pending'">⏳ En attente</span>
+              <span *ngIf="photo.uploadStatus === 'uploading'">📤 Upload...</span>
+              <span *ngIf="photo.uploadStatus === 'completed'">✅ Terminé</span>
+              <span *ngIf="photo.uploadStatus === 'error'">❌ Erreur</span>
+            </span>
+          </div>
+          
+          <!-- Watermark indicator -->
+          <div class="absolute bottom-2 left-2" *ngIf="photo.watermarkApplied">
+            <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+              💧 Watermark appliqué
+            </span>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="absolute bottom-0 left-0 right-0 bg-gray-200 h-1" *ngIf="photo.uploadStatus === 'uploading'">
+            <div class="bg-blue-600 h-1 transition-all duration-300"
+                 [style.width.%]="photo.uploadProgress"></div>
+          </div>
+        </div>
+        
+        <!-- Photo Info -->
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="font-medium text-gray-900 truncate">{{ photo.name }}</h4>
+            <button (click)="removePhoto(photo.id)"
+                    [disabled]="photo.uploadStatus === 'uploading'"
+                    class="text-red-500 hover:text-red-700 transition-colors ml-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="text-sm text-gray-500 mb-3">
+            {{ formatFileSize(photo.size) }} • {{ photo.type }}
+          </div>
+          
+          <!-- Error Message -->
+          <div class="text-sm text-red-600 mb-3" *ngIf="photo.errorMessage">
+            ⚠️ {{ photo.errorMessage }}
+          </div>
+          
+          <!-- Upload Progress -->
+          <div class="text-sm text-blue-600 mb-3" *ngIf="photo.uploadStatus === 'uploading'">
+            📤 Upload: {{ photo.uploadProgress | number:'1.0-0' }}%
+          </div>
+          
+          <!-- Tags -->
+          <div class="mb-3">
+            <label class="block text-xs font-medium text-gray-700 mb-1">Tags</label>
+            <div class="flex flex-wrap gap-1 mb-2">
+              <span *ngFor="let tag of photo.tags; let i = index"
+                    class="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                {{ tag }}
+                <button (click)="removeTagFromPhoto(photo.id, i)"
+                        class="ml-1 text-blue-600 hover:text-blue-800">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </span>
+            </div>
+            
+            <!-- Add Tag Input -->
+            <div class="flex">
+              <input type="text" 
+                     #tagInput
+                     placeholder="Ajouter un tag..."
+                     class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
+                     (keyup.enter)="addTagToPhoto(photo.id, tagInput.value); tagInput.value = ''">
+              <button (click)="addTagToPhoto(photo.id, tagInput.value); tagInput.value = ''"
+                      class="px-2 py-1 bg-blue-600 text-white text-xs rounded-r-md hover:bg-blue-700 transition-colors">
+                +
+              </button>
+            </div>
+          </div>
+          
+          <!-- Description -->
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+            <textarea [value]="photo.description"
+                      (input)="updatePhotoDescription(photo.id, $any($event.target).value)"
+                      placeholder="Description de la photo..."
+                      rows="2"
+                      class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div class="text-center py-16" *ngIf="photos.length === 0">
+      <div class="text-6xl mb-4">📸</div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune photo sélectionnée</h3>
+      <p class="text-gray-500 mb-4">
+        Commencez par ajouter des photos à uploader pour cet événement.
+      </p>
+      <button (click)="onDropZoneClick()"
+              class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        Sélectionner des photos
+      </button>
+    </div>
+  </div>
+</div>

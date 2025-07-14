@@ -1,0 +1,129 @@
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl w-full space-y-8">
+    <div class="text-center">
+      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+        Choisissez votre profil
+      </h2>
+      <p class="mt-2 text-lg text-gray-600">
+        Sélectionnez le type de compte qui vous correspond
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 mt-12">
+      <!-- Organizer Card -->
+      <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-green-200"
+           (click)="selectRole('organizer')">
+        <div class="text-6xl mb-6">📸</div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Je suis un Organisateur</h3>
+        <p class="text-gray-600 mb-6">
+          Je crée et gère des événements photo
+        </p>
+        <ul class="text-left space-y-3 mb-8">
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Création d'événements illimitée
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Upload et gestion de photos
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Gestion des bénéficiaires
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Monétisation et statistiques
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Partage des revenus automatique
+          </li>
+        </ul>
+        <button class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+          Continuer comme Organisateur
+        </button>
+      </div>
+
+      <!-- Administrator Card -->
+      <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-200"
+           (click)="selectRole('admin')">
+        <div class="text-6xl mb-6">🛡️</div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Je suis un Administrateur</h3>
+        <p class="text-gray-600 mb-6">
+          J'administre et modère la plateforme
+        </p>
+        <ul class="text-left space-y-3 mb-8">
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Vue globale de tous les événements
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Gestion et modération des utilisateurs
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Modération du contenu photo
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Statistiques et analyses avancées
+          </li>
+          <li class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Configuration de la plateforme
+          </li>
+        </ul>
+        <button class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+          Continuer comme Administrateur
+        </button>
+      </div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="bg-blue-50 rounded-lg p-6 mt-8">
+      <h3 class="text-lg font-semibold text-blue-900 mb-3">À propos des rôles</h3>
+      <div class="grid md:grid-cols-2 gap-6 text-sm text-blue-700">
+        <div>
+          <h4 class="font-semibold mb-2">🏢 Organisateur</h4>
+          <p>Idéal pour les photographes professionnels, agences événementielles, ou toute personne souhaitant monétiser ses photos d'événements. Vous pouvez ajouter des bénéficiaires pour partager les revenus.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-2">⚖️ Administrateur</h4>
+          <p>Réservé aux équipes de modération et de gestion de la plateforme. Accès complet pour superviser l'activité, modérer le contenu et gérer les utilisateurs.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back to login -->
+    <div class="text-center mt-8">
+      <p class="text-gray-600">
+        Vous avez déjà un compte ?
+        <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+          Se connecter
+        </a>
+      </p>
+    </div>
+  </div>
+</div>

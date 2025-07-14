@@ -1,0 +1,219 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- En-tête -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Modifier l'événement</h1>
+          <p class="mt-2 text-gray-600">Modifiez les informations de votre événement</p>
+        </div>
+        <button (click)="onCancel()" 
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Annuler
+        </button>
+      </div>
+    </div>
+
+    <!-- Spinner de chargement -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <span class="ml-3 text-gray-600">Chargement des données de l'événement...</span>
+    </div>
+
+    <!-- Formulaire -->
+    <div *ngIf="!isLoading" class="bg-white shadow-lg rounded-lg">
+      <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="space-y-6 p-6">
+        
+        <!-- Informations de base -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Informations générales</h2>
+          
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <!-- Nom de l'événement -->
+            <div class="sm:col-span-2">
+              <label for="name" class="block text-sm font-medium text-gray-700">
+                Nom de l'événement *
+              </label>
+              <input type="text" 
+                     id="name" 
+                     formControlName="name"
+                     [class.border-red-300]="isFieldInvalid('name')"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+              <p *ngIf="getFieldError('name')" class="mt-1 text-sm text-red-600">
+                {{ getFieldError('name') }}
+              </p>
+            </div>
+
+            <!-- Date -->
+            <div>
+              <label for="date" class="block text-sm font-medium text-gray-700">
+                Date de l'événement *
+              </label>
+              <input type="date" 
+                     id="date" 
+                     formControlName="date"
+                     [class.border-red-300]="isFieldInvalid('date')"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+              <p *ngIf="getFieldError('date')" class="mt-1 text-sm text-red-600">
+                {{ getFieldError('date') }}
+              </p>
+            </div>
+
+            <!-- Heure -->
+            <div>
+              <label for="time" class="block text-sm font-medium text-gray-700">
+                Heure de début *
+              </label>
+              <input type="time" 
+                     id="time" 
+                     formControlName="time"
+                     [class.border-red-300]="isFieldInvalid('time')"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+              <p *ngIf="getFieldError('time')" class="mt-1 text-sm text-red-600">
+                {{ getFieldError('time') }}
+              </p>
+            </div>
+
+            <!-- Lieu -->
+            <div class="sm:col-span-2">
+              <label for="location" class="block text-sm font-medium text-gray-700">
+                Lieu de l'événement *
+              </label>
+              <input type="text" 
+                     id="location" 
+                     formControlName="location"
+                     [class.border-red-300]="isFieldInvalid('location')"
+                     placeholder="Adresse complète du lieu"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+              <p *ngIf="getFieldError('location')" class="mt-1 text-sm text-red-600">
+                {{ getFieldError('location') }}
+              </p>
+            </div>
+
+            <!-- Description -->
+            <div class="sm:col-span-2">
+              <label for="description" class="block text-sm font-medium text-gray-700">
+                Description de l'événement *
+              </label>
+              <textarea id="description" 
+                        formControlName="description"
+                        [class.border-red-300]="isFieldInvalid('description')"
+                        rows="4"
+                        placeholder="Décrivez votre événement, l'ambiance, les moments clés..."
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"></textarea>
+              <p *ngIf="getFieldError('description')" class="mt-1 text-sm text-red-600">
+                {{ getFieldError('description') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paramètres de confidentialité -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Confidentialité et accès</h2>
+          
+          <div class="space-y-4">
+            <!-- Visibilité -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Visibilité de l'événement *
+              </label>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input type="radio" 
+                         formControlName="visibility" 
+                         value="public"
+                         class="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300">
+                  <span class="ml-3 text-sm text-gray-700">
+                    <span class="font-medium">Public</span> - Visible par tous, partage facile
+                  </span>
+                </label>
+                <label class="flex items-center">
+                  <input type="radio" 
+                         formControlName="visibility" 
+                         value="private"
+                         class="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300">
+                  <span class="ml-3 text-sm text-gray-700">
+                    <span class="font-medium">Privé</span> - Accessible uniquement via code ou invitation
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paramètres des photos -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Gestion des photos</h2>
+          
+          <div class="space-y-4">
+            <!-- Limite de photos -->
+            <div>
+              <label for="maxPhotos" class="block text-sm font-medium text-gray-700">
+                Nombre maximum de photos (optionnel)
+              </label>
+              <input type="number" 
+                     id="maxPhotos" 
+                     formControlName="maxPhotos"
+                     min="1"
+                     placeholder="Laissez vide pour aucune limite"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+            </div>
+
+            <!-- Options -->
+            <div class="space-y-3">
+              <label class="flex items-center">
+                <input type="checkbox" 
+                       formControlName="allowGuestUploads"
+                       class="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded">
+                <span class="ml-3 text-sm text-gray-700">
+                  Autoriser les invités à uploader des photos
+                </span>
+              </label>
+
+              <label class="flex items-center">
+                <input type="checkbox" 
+                       formControlName="requireApproval"
+                       class="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded">
+                <span class="ml-3 text-sm text-gray-700">
+                  Approbation requise avant publication des photos
+                </span>
+              </label>
+
+              <label class="flex items-center">
+                <input type="checkbox" 
+                       formControlName="watermarkPhotos"
+                       class="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded">
+                <span class="ml-3 text-sm text-gray-700">
+                  Ajouter un filigrane sur les photos téléchargées
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex justify-end space-x-3 pt-6">
+          <button type="button" 
+                  (click)="onCancel()"
+                  class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+            Annuler
+          </button>
+          
+          <button type="submit" 
+                  [disabled]="eventForm.invalid || isSaving"
+                  class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg *ngIf="isSaving" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ isSaving ? 'Mise à jour...' : 'Mettre à jour l\'événement' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

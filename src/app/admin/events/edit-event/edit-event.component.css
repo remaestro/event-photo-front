@@ -1,0 +1,28 @@
+/* Styles spécifiques pour le composant d'édition d'événement */
+.form-section {
+  @apply border-b border-gray-200 pb-6;
+}
+
+.form-section:last-child {
+  @apply border-b-0 pb-0;
+}
+
+.field-error {
+  @apply border-red-300 focus:ring-red-500 focus:border-red-500;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600;
+}
+
+/* Animation pour les transitions de formulaire */
+.form-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Style pour les champs désactivés pendant la sauvegarde */
+.saving input,
+.saving textarea,
+.saving select {
+  @apply opacity-50 cursor-not-allowed;
+}

@@ -1,0 +1,324 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
+          <p class="text-gray-600 mt-2">Administration et modération des comptes utilisateurs</p>
+        </div>
+        <div class="flex space-x-3">
+          <button (click)="exportUsers()" 
+                  class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Exporter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement des utilisateurs...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Filtres</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <!-- Search -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Recherche</label>
+            <input type="text" 
+                   [(ngModel)]="filters.search"
+                   (input)="onFilterChange()"
+                   placeholder="Email, prénom ou nom..."
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Role Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
+            <select [(ngModel)]="filters.role" 
+                    (change)="onFilterChange()"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Tous les rôles</option>
+              <option value="organizer">Organisateur</option>
+              <option value="admin">Administrateur</option>
+            </select>
+          </div>
+
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Statut</label>
+            <select [(ngModel)]="filters.status" 
+                    (change)="onFilterChange()"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Tous les statuts</option>
+              <option value="active">Actif</option>
+              <option value="suspended">Suspendu</option>
+              <option value="pending">En attente</option>
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          <div class="flex items-end">
+            <button (click)="clearFilters()" 
+                    class="w-full bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 transition-colors">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <!-- Date Range -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Date d'inscription (du)</label>
+            <input type="date" 
+                   [(ngModel)]="filters.dateFrom"
+                   (change)="onFilterChange()"
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Au</label>
+            <input type="date" 
+                   [(ngModel)]="filters.dateTo"
+                   (change)="onFilterChange()"
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions -->
+      <div *ngIf="showBulkActions" 
+           class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <span class="text-blue-800 font-medium">{{ selectedUsers.size }} utilisateur(s) sélectionné(s)</span>
+          </div>
+          <div class="flex space-x-3">
+            <button (click)="bulkActivate()" 
+                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+              Activer
+            </button>
+            <button (click)="bulkSuspend()" 
+                    class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors">
+              Suspendre
+            </button>
+            <button (click)="deselectAllUsers()" 
+                    class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors">
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">
+              Utilisateurs ({{ filteredUsers.length }})
+            </h3>
+            <div class="flex items-center space-x-2">
+              <button (click)="selectAllUsers()" 
+                      class="text-sm text-blue-600 hover:text-blue-800">
+                Sélectionner tout
+              </button>
+              <span class="text-gray-300">|</span>
+              <button (click)="deselectAllUsers()" 
+                      class="text-sm text-gray-600 hover:text-gray-800">
+                Désélectionner tout
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <input type="checkbox" 
+                         (change)="handleCheckboxChange($event) ? selectAllUsers() : deselectAllUsers()"
+                         class="rounded border-gray-300">
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Utilisateur
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rôle
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Statut
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Activité
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Revenus
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Inscription
+                </th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let user of getPaginatedUsers()" 
+                  [class]="selectedUsers.has(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50'">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input type="checkbox" 
+                         [checked]="selectedUsers.has(user.id)"
+                         (change)="toggleUserSelection(user.id)"
+                         class="rounded border-gray-300">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                        <span class="text-sm font-medium text-gray-700">
+                          {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900">
+                        {{ user.firstName }} {{ user.lastName }}
+                        <span *ngIf="user.isVerified" class="text-green-500 ml-1">✓</span>
+                      </div>
+                      <div class="text-sm text-gray-500">{{ user.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        [class]="user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'">
+                    {{ getRoleText(user.role) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusColor(user.status)">
+                    {{ getStatusText(user.status) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div>{{ user.eventsCount }} événements</div>
+                  <div class="text-gray-500">{{ user.photosCount }} photos</div>
+                  <div class="text-xs text-gray-400">Connexion: {{ formatDate(user.lastLogin) }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ formatCurrency(user.totalRevenue) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDate(user.registrationDate) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button (click)="viewUserDetails(user.id)" 
+                            class="text-blue-600 hover:text-blue-900">
+                      Voir
+                    </button>
+                    <button *ngIf="user.status === 'suspended'" 
+                            (click)="activateUser(user.id)"
+                            class="text-green-600 hover:text-green-900">
+                      Activer
+                    </button>
+                    <button *ngIf="user.status === 'active'" 
+                            (click)="suspendUser(user.id)"
+                            class="text-red-600 hover:text-red-900">
+                      Suspendre
+                    </button>
+                    <div class="relative group">
+                      <button class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                        </svg>
+                      </button>
+                      <div class="absolute right-0 top-6 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                        <button (click)="editUser(user.id)" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          Modifier
+                        </button>
+                        <button (click)="changeUserRole(user.id, user.role === 'admin' ? 'organizer' : 'admin')" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          Changer rôle
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button (click)="changePage(pagination.currentPage - 1)"
+                      [disabled]="pagination.currentPage <= 1"
+                      class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                Précédent
+              </button>
+              <button (click)="changePage(pagination.currentPage + 1)"
+                      [disabled]="pagination.currentPage >= pagination.totalPages"
+                      class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                Suivant
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Affichage 
+                  <span class="font-medium">{{ (pagination.currentPage - 1) * pagination.itemsPerPage + 1 }}</span>
+                  à 
+                  <span class="font-medium">{{ getMathMin(pagination.currentPage * pagination.itemsPerPage, filteredUsers.length) }}</span>
+                  sur 
+                  <span class="font-medium">{{ filteredUsers.length }}</span>
+                  résultats
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button (click)="changePage(pagination.currentPage - 1)"
+                          [disabled]="pagination.currentPage <= 1"
+                          class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                  
+                  <button *ngFor="let page of [].constructor(pagination.totalPages); let i = index"
+                          (click)="changePage(i + 1)"
+                          [class]="(i + 1) === pagination.currentPage ? 
+                                   'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-600 text-sm font-medium text-white' :
+                                   'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'">
+                    {{ i + 1 }}
+                  </button>
+                  
+                  <button (click)="changePage(pagination.currentPage + 1)"
+                          [disabled]="pagination.currentPage >= pagination.totalPages"
+                          class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

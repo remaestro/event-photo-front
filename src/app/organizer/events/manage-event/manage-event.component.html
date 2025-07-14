@@ -1,0 +1,335 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement de l'événement...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading && event" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+      <div class="flex items-start justify-between">
+        <div class="flex items-start space-x-4">
+          <button (click)="goBackToEvents()" 
+                  class="text-gray-500 hover:text-gray-700 transition-colors mt-1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          
+          <div class="flex-1">
+            <div class="flex items-center space-x-3 mb-2">
+              <h1 class="text-3xl font-bold text-gray-900">{{ event.name }}</h1>
+              <span [class]="'px-3 py-1 text-sm font-medium rounded-full ' + getStatusColor(event.status)">
+                {{ getStatusText(event.status) }}
+              </span>
+              <span class="text-2xl">{{ getVisibilityIcon(event.visibility) }}</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                {{ formatDate(event.date) }}
+              </div>
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                </svg>
+                {{ event.location }}
+              </div>
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                </svg>
+                Code: {{ event.code }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="flex space-x-3">
+          <button (click)="uploadPhotos()" 
+                  class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            Ajouter des photos
+          </button>
+          
+          <button (click)="editEvent()" 
+                  class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Modifier
+          </button>
+          
+          <button (click)="shareEvent()" 
+                  class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+            </svg>
+            Partager
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Photos -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-md">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-600">Photos uploadées</p>
+            <p class="text-2xl font-bold text-gray-900">{{ event.photosCount }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-md">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-600">Photos vendues</p>
+            <p class="text-2xl font-bold text-gray-900">{{ event.soldPhotos }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-md">
+              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-600">Revenus générés</p>
+            <p class="text-2xl font-bold text-green-600">{{ formatCurrency(event.revenue) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversion Rate -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-md">
+              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-600">Taux de conversion</p>
+            <p [class]="'text-2xl font-bold ' + getConversionRateColor(event.conversionRate!)">
+              {{ event.conversionRate!.toFixed(1) }}%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column -->
+      <div class="lg:col-span-2 space-y-8">
+        
+        <!-- Recent Sales -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" *ngIf="stats">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Ventes récentes</h3>
+          
+          <div class="space-y-4" *ngIf="stats.recentSales.length > 0; else noSales">
+            <div *ngFor="let sale of stats.recentSales" 
+                 class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                  <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900">{{ sale.buyerEmail }}</p>
+                  <p class="text-sm text-gray-600">{{ sale.photoCount }} photo(s) • {{ formatDateTime(sale.date) }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-green-600">{{ formatCurrency(sale.amount) }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <ng-template #noSales>
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              </svg>
+              <p class="text-gray-600">Aucune vente pour le moment</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- Top Photos -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" *ngIf="stats">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos les plus vendues</h3>
+          
+          <div class="space-y-4" *ngIf="stats.topPhotos.length > 0; else noTopPhotos">
+            <div *ngFor="let photo of stats.topPhotos; let i = index" 
+                 class="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+              <div class="flex-shrink-0">
+                <span class="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-sm font-medium rounded-full">
+                  {{ i + 1 }}
+                </span>
+              </div>
+              <img [src]="photo.thumbnail" [alt]="photo.name" 
+                   class="w-16 h-12 object-cover rounded-md">
+              <div class="flex-1">
+                <p class="font-medium text-gray-900">{{ photo.name }}</p>
+                <p class="text-sm text-gray-600">{{ photo.sales }} vente(s) • {{ photo.views }} vue(s)</p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-green-600">{{ formatCurrency(photo.revenue) }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <ng-template #noTopPhotos>
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="text-gray-600">Aucune donnée de vente disponible</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-8">
+        
+        <!-- Event Details -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Détails de l'événement</h3>
+          
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Description</p>
+              <p class="text-gray-900">{{ event.description }}</p>
+            </div>
+            
+            <div>
+              <p class="text-sm font-medium text-gray-600">Prix par photo</p>
+              <p class="text-lg font-semibold text-blue-600">{{ formatCurrency(event.price) }}</p>
+            </div>
+            
+            <div *ngIf="event.tags.length > 0">
+              <p class="text-sm font-medium text-gray-600 mb-2">Tags</p>
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let tag of event.tags" 
+                      class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                  #{{ tag }}
+                </span>
+              </div>
+            </div>
+            
+            <div>
+              <p class="text-sm font-medium text-gray-600">Créé le</p>
+              <p class="text-gray-900">{{ formatDate(event.createdAt) }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+          
+          <div class="space-y-3">
+            <button (click)="viewAllPhotos()" 
+                    class="w-full text-left px-4 py-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors flex items-center">
+              <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              Voir toutes les photos
+            </button>
+            
+            <button (click)="manageBeneficiaries()" 
+                    class="w-full text-left px-4 py-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors flex items-center">
+              <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+              </svg>
+              Gérer les bénéficiaires
+            </button>
+            
+            <button (click)="downloadQRCode()" 
+                    class="w-full text-left px-4 py-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors flex items-center">
+              <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+              </svg>
+              Télécharger le QR Code
+            </button>
+            
+            <button (click)="exportData()" 
+                    class="w-full text-left px-4 py-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors flex items-center">
+              <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Exporter les données
+            </button>
+          </div>
+        </div>
+
+        <!-- Beneficiaries -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" *ngIf="event.beneficiaries.length > 0">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Bénéficiaires</h3>
+          
+          <div class="space-y-3">
+            <div *ngFor="let beneficiary of event.beneficiaries" 
+                 class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p class="font-medium text-gray-900">{{ beneficiary.name }}</p>
+                <p class="text-sm text-gray-600">{{ beneficiary.email }}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-blue-600">{{ beneficiary.percentage }}%</p>
+                <span [class]="'px-2 py-1 text-xs rounded-full ' + 
+                  (beneficiary.status === 'accepted' ? 'bg-green-100 text-green-800' : 
+                   beneficiary.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                   'bg-red-100 text-red-800')">
+                  {{ beneficiary.status === 'accepted' ? 'Accepté' : 
+                     beneficiary.status === 'pending' ? 'En attente' : 'Refusé' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

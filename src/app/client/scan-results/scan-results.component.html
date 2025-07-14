@@ -1,0 +1,307 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="container mx-auto px-4">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-8 rounded-lg text-center">
+        <div class="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-gray-600">Chargement des résultats...</p>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-8">
+      <button (click)="goBack()" class="mb-4 flex items-center text-indigo-600 hover:text-indigo-800 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Retour au scan
+      </button>
+      
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Vos photos trouvées</h1>
+            <p class="text-gray-600 mt-2">
+              {{ foundPhotos.length }} photos où vous apparaissez
+              <span class="ml-2 text-sm">
+                ({{ highConfidencePhotos.length }} excellentes, {{ mediumConfidencePhotos.length }} bonnes)
+              </span>
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm text-gray-500">Session: {{ sessionId }}</p>
+            <p class="text-lg font-semibold text-indigo-600">Total sélectionné: {{ getTotalPrice() }}€</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions & Filters -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-8">
+      <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
+        <!-- Selection Actions -->
+        <div class="flex items-center gap-4 flex-wrap">
+          <button (click)="selectAll()" 
+                  [class]="allSelected ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'"
+                  class="px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+            </svg>
+            {{ allSelected ? 'Désélectionner tout' : 'Sélectionner tout' }}
+          </button>
+          
+          <button (click)="selectHighConfidence()" 
+                  class="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Meilleures correspondances
+          </button>
+          
+          <span class="text-gray-600 bg-gray-100 px-3 py-2 rounded-md">
+            {{ selectedCount }} photo(s) sélectionnée(s)
+          </span>
+        </div>
+        
+        <!-- Sort & Cart Actions -->
+        <div class="flex items-center gap-4 flex-wrap">
+          <select [(ngModel)]="sortBy" (change)="sortPhotos()" 
+                  class="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            <option value="confidence">Trier par correspondance</option>
+            <option value="date">Trier par date</option>
+            <option value="price">Trier par prix</option>
+          </select>
+          
+          <button (click)="addToCart()" 
+                  [disabled]="selectedCount === 0"
+                  class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293a1 1 0 01-1.414 0L1 13m6 0v6a2 2 0 002 2h4a2 2 0 002-2v-6"></path>
+            </svg>
+            Ajouter au panier ({{ selectedCount }})
+          </button>
+          
+          <button (click)="buyNow()" 
+                  [disabled]="selectedCount === 0"
+                  class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            Acheter maintenant
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div *ngFor="let photo of sortedPhotos; trackBy: trackByPhotoId" 
+           class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+        
+        <!-- Photo with Watermark -->
+        <div class="relative aspect-square bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+          <!-- Real photo preview -->
+          <img [src]="getPhotoUrl(photo.id, 'thumbnail')" 
+               [alt]="'Photo ' + photo.id"
+               class="w-full h-full object-cover cursor-pointer"
+               (click)="openPreview(photo)"
+               (error)="onImageError($event)"
+               loading="lazy">
+          
+          <!-- Watermark overlay -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="text-white text-xl font-bold opacity-30 transform rotate-45 select-none">
+              EVENTPHOTO
+            </div>
+          </div>
+          
+          <!-- Selection overlay -->
+          <div *ngIf="photo.selected" 
+               class="absolute inset-0 bg-indigo-600 bg-opacity-20 border-4 border-indigo-600 pointer-events-none">
+          </div>
+          
+          <!-- Selection checkbox -->
+          <div class="absolute top-3 left-3">
+            <label class="cursor-pointer">
+              <input type="checkbox" 
+                     [checked]="photo.selected" 
+                     (change)="toggleSelection(photo)"
+                     class="sr-only">
+              <div [class]="photo.selected ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-gray-300'"
+                   class="w-6 h-6 border-2 rounded-md flex items-center justify-center shadow-lg">
+                <svg *ngIf="photo.selected" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </label>
+          </div>
+          
+          <!-- Confidence badge -->
+          <div class="absolute top-3 right-3">
+            <div [class]="getConfidenceColor(photo.confidence)"
+                 class="text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg">
+              {{ photo.confidence }}%
+            </div>
+          </div>
+
+          <!-- Preview button overlay -->
+          <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 hover:opacity-100">
+            <button (click)="openPreview(photo)" 
+                    class="bg-white text-gray-800 px-4 py-2 rounded-lg font-semibold transform scale-90 hover:scale-100 transition-transform">
+              👁️ Aperçu complet
+            </button>
+          </div>
+        </div>
+        
+        <!-- Photo Info -->
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900">{{ getConfidenceText(photo.confidence) }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ photo.timestamp }}</p>
+              <p class="text-xs text-gray-500">{{ photo.size }} • {{ photo.metadata?.location }}</p>
+            </div>
+            <div class="text-right ml-4">
+              <p class="text-lg font-bold text-gray-900">{{ photo.price }}€</p>
+              <p class="text-xs text-gray-500">Haute qualité</p>
+            </div>
+          </div>
+          
+          <!-- Tags -->
+          <div *ngIf="photo.metadata?.tags" class="flex flex-wrap gap-1 mb-3">
+            <span *ngFor="let tag of photo.metadata?.tags" 
+                  class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+              {{ tag }}
+            </span>
+          </div>
+          
+          <!-- Action buttons -->
+          <div class="flex gap-2">
+            <button (click)="openPreview(photo)" 
+                    class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-md text-sm hover:bg-gray-200 transition-colors flex items-center justify-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              Aperçu
+            </button>
+            <button (click)="toggleSelection(photo)" 
+                    [class]="photo.selected ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                    class="flex-1 px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-center">
+              <svg *ngIf="!photo.selected" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              <svg *ngIf="photo.selected" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              {{ photo.selected ? 'Sélectionné' : 'Sélectionner' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="foundPhotos.length === 0 && !isLoading" class="text-center py-16">
+      <div class="text-6xl mb-4">📸</div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucune photo trouvée</h3>
+      <p class="text-gray-600 mb-6 max-w-md mx-auto">
+        Nous n'avons pas pu identifier votre visage dans les photos de cet événement. 
+        Essayez avec une autre photo ou contactez le photographe.
+      </p>
+      <div class="flex justify-center gap-4">
+        <button (click)="goBack()" 
+                class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+          Essayer à nouveau
+        </button>
+        <button class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors">
+          Contacter le support
+        </button>
+      </div>
+    </div>
+
+    <!-- Photo Preview Modal -->
+    <div *ngIf="showPreviewModal && previewPhoto" 
+         class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+         (click)="closePreview()">
+      <div class="bg-white rounded-lg max-w-4xl max-h-full overflow-auto" (click)="$event.stopPropagation()">
+        <div class="p-4 border-b flex justify-between items-center">
+          <div>
+            <h3 class="text-lg font-semibold">Aperçu de la photo</h3>
+            <p class="text-sm text-gray-600">{{ previewPhoto.timestamp }} • {{ getConfidenceText(previewPhoto.confidence) }}</p>
+          </div>
+          <button (click)="closePreview()" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="relative">
+          <img [src]="getPhotoUrl(previewPhoto.id, 'watermarked')" 
+               [alt]="'Preview of photo ' + previewPhoto.id"
+               (error)="onImageError($event)"
+               class="w-full h-auto max-h-96 object-contain">
+          
+          <!-- Watermark on preview -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="text-white text-4xl font-bold opacity-20 transform rotate-45 select-none">
+              EVENTPHOTO
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-4 border-t bg-gray-50">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-semibold text-lg">{{ previewPhoto.price }}€</p>
+              <p class="text-sm text-gray-600">Version haute qualité sans watermark</p>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="toggleSelection(previewPhoto); closePreview()" 
+                      [class]="previewPhoto.selected ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'"
+                      class="px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                {{ previewPhoto.selected ? 'Retirer de la sélection' : 'Ajouter à la sélection' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Cart Summary -->
+    <div *ngIf="selectedCount > 0" 
+         class="fixed bottom-6 right-6 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm z-40 transform transition-all duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="font-semibold text-gray-900 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293a1 1 0 01-1.414 0L1 13m6 0v6a2 2 0 002 2h4a2 2 0 002-2v-6"></path>
+          </svg>
+          Panier
+        </h4>
+        <button (click)="clearSelection()" 
+                class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="text-sm text-gray-600 mb-4">
+        <p>{{ selectedCount }} photo(s) sélectionnée(s)</p>
+        <p class="text-lg font-bold text-gray-900">Total: {{ getTotalPrice() }}€</p>
+      </div>
+      
+      <div class="flex gap-2">
+        <button (click)="addToCart()" 
+                class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm">
+          Voir le panier
+        </button>
+        <button (click)="buyNow()" 
+                class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm">
+          Acheter
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

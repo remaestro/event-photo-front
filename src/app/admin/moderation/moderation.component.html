@@ -1,0 +1,384 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Modération du Contenu</h1>
+          <p class="text-gray-600 mt-2">Modération des photos et gestion des signalements</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement des contenus...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">⏳</div>
+            <div>
+              <p class="text-2xl font-bold text-yellow-600">{{ moderationStats.pending }}</p>
+              <p class="text-gray-600">En attente</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">✅</div>
+            <div>
+              <p class="text-2xl font-bold text-green-600">{{ moderationStats.approved }}</p>
+              <p class="text-gray-600">Approuvées</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">❌</div>
+            <div>
+              <p class="text-2xl font-bold text-red-600">{{ moderationStats.rejected }}</p>
+              <p class="text-gray-600">Rejetées</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">🚨</div>
+            <div>
+              <p class="text-2xl font-bold text-orange-600">{{ moderationStats.reported }}</p>
+              <p class="text-gray-600">Signalées</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Filtres</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Statut</label>
+            <select [(ngModel)]="filters.status" 
+                    (change)="onFilterChange()"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Tous</option>
+              <option value="pending">En attente</option>
+              <option value="approved">Approuvées</option>
+              <option value="rejected">Rejetées</option>
+            </select>
+          </div>
+
+          <!-- Event Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Événement</label>
+            <input type="text" 
+                   [(ngModel)]="filters.eventId"
+                   (input)="onFilterChange()"
+                   placeholder="ID événement..."
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Uploader Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Uploader</label>
+            <input type="text" 
+                   [(ngModel)]="filters.uploaderId"
+                   (input)="onFilterChange()"
+                   placeholder="ID utilisateur..."
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Has Reports Filter -->
+          <div class="flex items-end">
+            <label class="flex items-center">
+              <input type="checkbox" 
+                     [(ngModel)]="filters.hasReports"
+                     (change)="onFilterChange()"
+                     class="rounded border-gray-300 mr-2">
+              <span class="text-sm text-gray-700">Avec signalements</span>
+            </label>
+          </div>
+
+          <!-- AI Flag Filter -->
+          <div class="flex items-end">
+            <label class="flex items-center">
+              <input type="checkbox" 
+                     [(ngModel)]="filters.aiFlag"
+                     (change)="onFilterChange()"
+                     class="rounded border-gray-300 mr-2">
+              <span class="text-sm text-gray-700">Flaggées par IA</span>
+            </label>
+          </div>
+
+          <!-- Clear Filters -->
+          <div class="flex items-end">
+            <button (click)="clearFilters()" 
+                    class="w-full bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 transition-colors">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions -->
+      <div *ngIf="showBulkActions" 
+           class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <span class="text-blue-800 font-medium">{{ selectedPhotos.size }} photo(s) sélectionnée(s)</span>
+          </div>
+          <div class="flex space-x-3">
+            <button (click)="bulkApprove()" 
+                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+              Approuver
+            </button>
+            <button (click)="bulkReject()" 
+                    class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors">
+              Rejeter
+            </button>
+            <button (click)="deselectAllPhotos()" 
+                    class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors">
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photos Grid -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-medium text-gray-900">
+            Photos à modérer ({{ filteredPhotos.length }})
+          </h3>
+          <div class="flex items-center space-x-2">
+            <button (click)="selectAllPhotos()" 
+                    class="text-sm text-blue-600 hover:text-blue-800">
+              Sélectionner tout
+            </button>
+            <span class="text-gray-300">|</span>
+            <button (click)="deselectAllPhotos()" 
+                    class="text-sm text-gray-600 hover:text-gray-800">
+              Désélectionner tout
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div *ngFor="let photo of filteredPhotos" 
+               [class]="'border rounded-lg overflow-hidden ' + (selectedPhotos.has(photo.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300')">
+            
+            <!-- Photo Header -->
+            <div class="p-3 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" 
+                         *ngIf="photo.status === 'pending'"
+                         [checked]="selectedPhotos.has(photo.id)"
+                         (change)="togglePhotoSelection(photo.id)"
+                         class="rounded border-gray-300">
+                  <span class="text-lg">{{ getPriorityIcon(photo) }}</span>
+                  <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getStatusColor(photo.status)">
+                    {{ getStatusText(photo.status) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Photo Image -->
+            <div class="relative cursor-pointer" (click)="viewPhoto(photo)">
+              <img [src]="photo.thumbnailUrl" 
+                   [alt]="photo.filename"
+                   class="w-full h-48 object-cover">
+              <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity flex items-center justify-center">
+                <svg class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Photo Info -->
+            <div class="p-3">
+              <h4 class="font-medium text-gray-900 truncate">{{ photo.filename }}</h4>
+              <p class="text-sm text-gray-600 truncate">{{ photo.eventName }}</p>
+              <p class="text-xs text-gray-500">Par {{ photo.uploaderName }}</p>
+              <p class="text-xs text-gray-500">{{ formatDate(photo.uploadDate) }}</p>
+              
+              <!-- AI Confidence -->
+              <div class="mt-2 flex items-center justify-between">
+                <span class="text-xs text-gray-500">IA:</span>
+                <span [class]="'text-xs font-medium ' + getAIConfidenceColor(photo.aiConfidence)">
+                  {{ (photo.aiConfidence * 100).toFixed(0) }}%
+                </span>
+              </div>
+
+              <!-- Reports -->
+              <div *ngIf="photo.reports.length > 0" class="mt-2">
+                <div class="text-xs text-red-600 font-medium">
+                  {{ photo.reports.length }} signalement(s)
+                </div>
+                <div *ngFor="let report of photo.reports" class="text-xs text-gray-500 mt-1">
+                  {{ report.reason }}
+                </div>
+              </div>
+
+              <!-- Moderation Reason -->
+              <div *ngIf="photo.moderationReason" class="mt-2">
+                <div class="text-xs text-gray-500">Raison: {{ photo.moderationReason }}</div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div *ngIf="photo.status === 'pending'" class="p-3 border-t border-gray-200">
+              <div class="flex space-x-2">
+                <button (click)="approvePhoto(photo.id)" 
+                        class="flex-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                  ✓ Approuver
+                </button>
+                <button (click)="rejectPhoto(photo.id, getPromptInput('Raison du rejet:') || '')" 
+                        class="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors">
+                  ✗ Rejeter
+                </button>
+              </div>
+              <button (click)="contactUploader(photo.uploaderId)" 
+                      class="w-full mt-2 bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200 transition-colors">
+                Contacter l'uploader
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredPhotos.length === 0" class="text-center py-12">
+          <div class="text-4xl mb-4">📷</div>
+          <p class="text-gray-500">Aucune photo à modérer</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Modal -->
+  <div *ngIf="showPhotoModal && selectedPhoto" 
+       class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+       (click)="closePhotoModal()">
+    <div class="bg-white rounded-lg max-w-4xl max-h-full m-4 overflow-hidden"
+         (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-medium text-gray-900">{{ selectedPhoto.filename }}</h3>
+            <p class="text-sm text-gray-600">{{ selectedPhoto.eventName }} - {{ selectedPhoto.uploaderName }}</p>
+          </div>
+          <button (click)="closePhotoModal()" 
+                  class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="flex">
+        <!-- Photo -->
+        <div class="flex-1">
+          <img [src]="selectedPhoto.fullUrl" 
+               [alt]="selectedPhoto.filename"
+               class="w-full h-auto max-h-96 object-contain">
+        </div>
+
+        <!-- Details -->
+        <div class="w-80 p-4 border-l border-gray-200 space-y-4">
+          <!-- Status -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+            <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusColor(selectedPhoto.status)">
+              {{ getStatusText(selectedPhoto.status) }}
+            </span>
+          </div>
+
+          <!-- AI Analysis -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Analyse IA</label>
+            <div class="text-sm">
+              <div class="flex justify-between">
+                <span>Confiance:</span>
+                <span [class]="getAIConfidenceColor(selectedPhoto.aiConfidence)">
+                  {{ (selectedPhoto.aiConfidence * 100).toFixed(0) }}%
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span>Inapproprié:</span>
+                <span [class]="selectedPhoto.isInappropriate ? 'text-red-600' : 'text-green-600'">
+                  {{ selectedPhoto.isInappropriate ? 'Oui' : 'Non' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div *ngIf="selectedPhoto.tags.length > 0">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+            <div class="flex flex-wrap gap-1">
+              <span *ngFor="let tag of selectedPhoto.tags" 
+                    class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                {{ tag }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Reports -->
+          <div *ngIf="selectedPhoto.reports.length > 0">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Signalements</label>
+            <div class="space-y-3">
+              <div *ngFor="let report of selectedPhoto.reports" 
+                   class="border border-gray-200 rounded p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium">{{ report.reason }}</span>
+                  <span [class]="'px-2 py-1 text-xs rounded ' + getReportStatusColor(report.status)">
+                    {{ report.status }}
+                  </span>
+                </div>
+                <p class="text-sm text-gray-600">{{ report.description }}</p>
+                <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                  <span>{{ report.reporterName }}</span>
+                  <span>{{ formatDate(report.timestamp) }}</span>
+                </div>
+                <button *ngIf="report.status === 'pending'"
+                        (click)="resolveReport(report.id, selectedPhoto.id)"
+                        class="mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200">
+                  Résoudre
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div *ngIf="selectedPhoto.status === 'pending'" class="space-y-2">
+            <button (click)="approvePhoto(selectedPhoto.id); closePhotoModal()" 
+                    class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
+              Approuver
+            </button>
+            <button (click)="rejectPhoto(selectedPhoto.id, getPromptInput('Raison du rejet:') || ''); closePhotoModal()" 
+                    class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+              Rejeter
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

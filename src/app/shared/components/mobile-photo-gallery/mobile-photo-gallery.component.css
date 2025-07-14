@@ -1,0 +1,131 @@
+/* Mobile Photo Gallery Styles */
+
+/* Loading spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Aspect ratio utilities */
+.aspect-square {
+  aspect-ratio: 1;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  .grid > div {
+    min-height: 120px;
+  }
+  
+  /* Better spacing for mobile */
+  .space-y-3 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Optimized image loading */
+  img {
+    will-change: transform;
+  }
+  
+  /* Reduced animations on mobile if needed */
+  @media (prefers-reduced-motion: reduce) {
+    .group:hover img {
+      transform: none;
+    }
+    
+    .transition-transform,
+    .transition-shadow {
+      transition: none;
+    }
+  }
+}
+
+/* Enhanced focus styles for accessibility */
+[role="gridcell"]:focus,
+[role="listitem"]:focus {
+  outline: 3px solid var(--focus-ring-color, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+.theme-high .bg-white {
+  border: 2px solid #000000;
+}
+
+.theme-high .ring-2 {
+  ring-width: 3px;
+}
+
+/* Dark mode styles */
+.theme-dark .bg-white {
+  background-color: #1f2937;
+}
+
+.theme-dark .text-gray-900 {
+  color: #f9fafb;
+}
+
+.theme-dark .text-gray-600 {
+  color: #9ca3af;
+}
+
+.theme-dark .border-gray-300 {
+  border-color: #4b5563;
+}
+
+/* Progressive image loading */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+img[loading="lazy"].loaded {
+  opacity: 1;
+}
+
+/* Skeleton loading animation */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Touch-specific enhancements */
+@media (pointer: coarse) {
+  /* Larger buttons and interactive elements */
+  button,
+  .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved hover states for touch */
+  .group:hover {
+    transform: scale(1.02);
+  }
+}
+
+/* Performance optimizations */
+.grid {
+  contain: layout;
+}
+
+.grid > div {
+  contain: layout style;
+}

@@ -1,0 +1,437 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Mes achats</h1>
+      <p class="text-gray-600 mt-2">Gérez vos photos achetées et téléchargez-les quand vous le souhaitez</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement de vos achats...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && purchases.length === 0" class="text-center py-12">
+      <div class="w-24 h-24 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
+        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+          </path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-medium text-gray-900 mb-2">Aucun achat</h3>
+      <p class="text-gray-600 mb-6">Vous n'avez pas encore acheté de photos. Découvrez nos événements pour trouver vos souvenirs !</p>
+      <button (click)="goToEvents()" 
+              class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+        Rechercher des événements
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading && purchases.length > 0">
+      
+      <!-- Filters and Sorting -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          <!-- Filter Tabs -->
+          <div class="flex space-x-1 bg-gray-100 rounded-lg p-1">
+            <button (click)="setFilter('all')"
+                    [class]="filterStatus === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                    class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              Tous ({{ purchases.length }})
+            </button>
+            <button (click)="setFilter('active')"
+                    [class]="filterStatus === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                    class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              Actifs ({{ getActivePurchasesCount() }})
+            </button>
+            <button (click)="setFilter('expired')"
+                    [class]="filterStatus === 'expired' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                    class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              Expirés ({{ getExpiredPurchasesCount() }})
+            </button>
+          </div>
+
+          <!-- Sort Options -->
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-700">Trier par:</span>
+            <div class="flex space-x-2">
+              <button (click)="setSortBy('date')"
+                      [class]="sortBy === 'date' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:text-gray-900'"
+                      class="px-3 py-1 rounded text-sm font-medium transition-colors">
+                Date
+                <span *ngIf="sortBy === 'date'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+              </button>
+              <button (click)="setSortBy('amount')"
+                      [class]="sortBy === 'amount' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:text-gray-900'"
+                      class="px-3 py-1 rounded text-sm font-medium transition-colors">
+                Montant
+                <span *ngIf="sortBy === 'amount'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+              </button>
+              <button (click)="setSortBy('items')"
+                      [class]="sortBy === 'items' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:text-gray-900'"
+                      class="px-3 py-1 rounded text-sm font-medium transition-colors">
+                Photos
+                <span *ngIf="sortBy === 'items'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Purchases List -->
+      <div class="space-y-6">
+        <div *ngFor="let purchase of filteredPurchases" 
+             class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          
+          <!-- Purchase Header -->
+          <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4">
+                <div>
+                  <h3 class="font-semibold text-gray-900">Commande #{{ purchase.id }}</h3>
+                  <p class="text-sm text-gray-600">{{ formatDate(purchase.date) }}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-2xl">{{ purchase.paymentMethod === 'stripe' ? '💳' : '🅿️' }}</span>
+                  <span class="text-sm text-gray-600">{{ getPaymentMethodName(purchase.paymentMethod) }}</span>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-4">
+                <div class="text-right">
+                  <p class="font-semibold text-gray-900">{{ formatCurrency(purchase.summary.total) }}</p>
+                  <p class="text-sm" [class]="getStatusColor(purchase)">{{ getStatusText(purchase) }}</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-2">
+                  <button (click)="viewPurchaseDetails(purchase)"
+                          class="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm">
+                    Détails
+                  </button>
+                  
+                  <button *ngIf="isDownloadActive(purchase)"
+                          (click)="downloadAllPhotos(purchase)"
+                          [disabled]="downloadingItems.has('all_' + purchase.id)"
+                          class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm flex items-center">
+                    <span *ngIf="!downloadingItems.has('all_' + purchase.id)">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      Tout télécharger
+                    </span>
+                    <span *ngIf="downloadingItems.has('all_' + purchase.id)" class="flex items-center">
+                      <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      En cours...
+                    </span>
+                  </button>
+                  
+                  <button (click)="downloadInvoice(purchase)"
+                          class="px-3 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-sm">
+                    📄 Facture
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download Expiry Warning -->
+            <div *ngIf="isDownloadActive(purchase) && getDaysUntilExpiry(purchase) <= 7" 
+                 class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm text-orange-800">
+                  <strong>Attention:</strong> Vos téléchargements expireront {{ getDaysUntilExpiry(purchase) === 1 ? 'demain' : 'dans ' + getDaysUntilExpiry(purchase) + ' jours' }}.
+                  Téléchargez vos photos maintenant !
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Photos Preview -->
+          <div class="p-6">
+            <h4 class="font-medium text-gray-900 mb-4">
+              Photos achetées ({{ purchase.items.length }})
+            </h4>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div *ngFor="let item of purchase.items.slice(0, 6)" 
+                   class="relative group">
+                <img [src]="item.thumbnail" 
+                     [alt]="'Photo ' + item.photoId"
+                     class="w-full h-24 object-cover rounded border group-hover:opacity-75 transition-opacity">
+                
+                <!-- Download Button Overlay -->
+                <button *ngIf="isDownloadActive(purchase)"
+                        (click)="downloadPhoto(item, purchase)"
+                        [disabled]="isDownloading(item.photoId, purchase.id)"
+                        class="absolute inset-0 bg-black bg-opacity-50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center disabled:opacity-50">
+                  <svg *ngIf="!isDownloading(item.photoId, purchase.id)" 
+                       class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <svg *ngIf="isDownloading(item.photoId, purchase.id)" 
+                       class="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </button>
+
+                <!-- Expired Overlay -->
+                <div *ngIf="!isDownloadActive(purchase)"
+                     class="absolute inset-0 bg-gray-900 bg-opacity-60 text-white rounded flex items-center justify-center">
+                  <span class="text-xs font-medium">Expiré</span>
+                </div>
+              </div>
+              
+              <!-- Show More Indicator -->
+              <div *ngIf="purchase.items.length > 6" 
+                   class="w-full h-24 bg-gray-100 rounded border flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                   (click)="viewPurchaseDetails(purchase)">
+                <span class="text-gray-600 text-sm font-medium">
+                  +{{ purchase.items.length - 6 }} autres
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purchase Details Modal -->
+    <div *ngIf="selectedPurchase" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         (click)="closePurchaseDetails()">
+      <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" 
+           (click)="$event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">
+              Détails de la commande #{{ selectedPurchase.id }}
+            </h2>
+            <button (click)="closePurchaseDetails()" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6">
+          <!-- Purchase Info -->
+          <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 class="font-medium text-gray-900 mb-3">Informations de commande</h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Date d'achat:</span>
+                  <span class="font-medium">{{ formatDate(selectedPurchase.date) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Transaction ID:</span>
+                  <span class="font-medium">{{ selectedPurchase.transactionId }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Paiement:</span>
+                  <span class="font-medium">{{ getPaymentMethodName(selectedPurchase.paymentMethod) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Statut téléchargement:</span>
+                  <span class="font-medium" [class]="getStatusColor(selectedPurchase)">
+                    {{ getStatusText(selectedPurchase) }}
+                  </span>
+                </div>
+                <div *ngIf="isDownloadActive(selectedPurchase)" class="flex justify-between">
+                  <span class="text-gray-600">Expire le:</span>
+                  <span class="font-medium">{{ formatDateShort(selectedPurchase.downloadExpiresAt!) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-medium text-gray-900 mb-3">Résumé de paiement</h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Sous-total:</span>
+                  <span>{{ formatCurrency(selectedPurchase.summary.subtotal) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">TVA:</span>
+                  <span>{{ formatCurrency(selectedPurchase.summary.tax) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Frais de traitement:</span>
+                  <span>{{ formatCurrency(selectedPurchase.summary.processing) }}</span>
+                </div>
+                <div class="border-t border-gray-200 pt-2">
+                  <div class="flex justify-between font-semibold">
+                    <span>Total:</span>
+                    <span>{{ formatCurrency(selectedPurchase.summary.total) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- All Photos -->
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-medium text-gray-900">
+                Toutes les photos ({{ selectedPurchase.items.length }})
+              </h3>
+              <button *ngIf="isDownloadActive(selectedPurchase)"
+                      (click)="downloadAllPhotos(selectedPurchase)"
+                      [disabled]="downloadingItems.has('all_' + selectedPurchase.id)"
+                      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm">
+                Télécharger tout
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div *ngFor="let item of selectedPurchase.items" 
+                   class="relative group">
+                <img [src]="item.thumbnail" 
+                     [alt]="'Photo ' + item.photoId"
+                     class="w-full h-32 object-cover rounded border">
+                
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2 rounded-b">
+                  <p class="text-white text-xs font-medium">{{ item.eventName }}</p>
+                  <p class="text-gray-300 text-xs">{{ formatCurrency(item.price) }}</p>
+                </div>
+
+                <!-- Download Button -->
+                <button *ngIf="isDownloadActive(selectedPurchase)"
+                        (click)="downloadPhoto(item, selectedPurchase)"
+                        [disabled]="isDownloading(item.photoId, selectedPurchase.id)"
+                        class="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-70">
+                  <svg *ngIf="!isDownloading(item.photoId, selectedPurchase.id)" 
+                       class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <svg *ngIf="isDownloading(item.photoId, selectedPurchase.id)" 
+                       class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div *ngIf="showInvoiceModal && selectedInvoice" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         (click)="closeInvoiceModal()">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
+           (click)="$event.stopPropagation()">
+        
+        <!-- Invoice Header -->
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">
+              Facture {{ selectedInvoice.invoiceNumber }}
+            </h2>
+            <button (click)="closeInvoiceModal()" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Invoice Content -->
+        <div class="p-6">
+          <div class="text-center border-b border-gray-200 pb-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">EventPhoto</h1>
+            <p class="text-gray-600">Plateforme de photos d'événements</p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 class="font-semibold text-gray-900 mb-2">Facturé à:</h3>
+              <div class="text-sm text-gray-600">
+                <p>{{ selectedInvoice.customerInfo.firstName }} {{ selectedInvoice.customerInfo.lastName }}</p>
+                <p>{{ selectedInvoice.customerInfo.email }}</p>
+                <p>{{ selectedInvoice.customerInfo.address }}</p>
+                <p>{{ selectedInvoice.customerInfo.postalCode }} {{ selectedInvoice.customerInfo.city }}</p>
+                <p>{{ selectedInvoice.customerInfo.country }}</p>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <div class="text-sm text-gray-600 space-y-1">
+                <p><strong>Date:</strong> {{ formatDateShort(selectedInvoice.orderDate) }}</p>
+                <p><strong>Transaction:</strong> {{ selectedInvoice.transactionId }}</p>
+                <p><strong>Paiement:</strong> {{ getPaymentMethodName(selectedInvoice.paymentMethod) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Invoice Items -->
+          <div class="mb-6">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left">Description</th>
+                  <th class="px-4 py-2 text-right">Prix unitaire</th>
+                  <th class="px-4 py-2 text-right">Quantité</th>
+                  <th class="px-4 py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedInvoice.items" class="border-b border-gray-200">
+                  <td class="px-4 py-2">
+                    Photo #{{ item.photoId }}
+                    <br><small class="text-gray-500">{{ item.eventName }}</small>
+                  </td>
+                  <td class="px-4 py-2 text-right">{{ formatCurrency(item.price) }}</td>
+                  <td class="px-4 py-2 text-right">{{ item.quantity || 1 }}</td>
+                  <td class="px-4 py-2 text-right">{{ formatCurrency(item.price * (item.quantity || 1)) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Invoice Totals -->
+          <div class="border-t border-gray-200 pt-4">
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Sous-total:</span>
+                <span>{{ formatCurrency(selectedInvoice.summary.subtotal) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>TVA (20%):</span>
+                <span>{{ formatCurrency(selectedInvoice.summary.tax) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Frais de traitement:</span>
+                <span>{{ formatCurrency(selectedInvoice.summary.processing) }}</span>
+              </div>
+              <div class="border-t border-gray-200 pt-2">
+                <div class="flex justify-between font-semibold text-lg">
+                  <span>Total:</span>
+                  <span>{{ formatCurrency(selectedInvoice.summary.total) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

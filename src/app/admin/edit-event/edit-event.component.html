@@ -1,0 +1,386 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Modifier l'événement</h1>
+          <p class="mt-2 text-gray-600">Modifiez les informations de l'événement ci-dessous</p>
+        </div>
+        <button
+          (click)="cancel()"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <span class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Annuler
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="bg-white rounded-lg shadow p-8 text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p class="text-gray-600">Chargement des données de l'événement...</p>
+    </div>
+
+    <!-- Edit Form -->
+    <form *ngIf="!isLoading" (ngSubmit)="onSubmit()" class="space-y-8">
+      <!-- Informations générales -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informations générales</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-2">
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+              Nom de l'événement *
+            </label>
+            <input
+              type="text"
+              id="name"
+              [(ngModel)]="event.name"
+              name="name"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Entrez le nom de l'événement"
+            />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              [(ngModel)]="event.description"
+              name="description"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Description de l'événement"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="date" class="block text-sm font-medium text-gray-700 mb-2">
+              Date *
+            </label>
+            <input
+              type="date"
+              id="date"
+              [(ngModel)]="event.date"
+              name="date"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label for="time" class="block text-sm font-medium text-gray-700 mb-2">
+              Heure *
+            </label>
+            <input
+              type="time"
+              id="time"
+              [(ngModel)]="event.time"
+              name="time"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+              Catégorie
+            </label>
+            <select
+              id="category"
+              [(ngModel)]="event.category"
+              name="category"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Sélectionnez une catégorie</option>
+              <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="visibility" class="block text-sm font-medium text-gray-700 mb-2">
+              Visibilité
+            </label>
+            <select
+              id="visibility"
+              [(ngModel)]="event.visibility"
+              name="visibility"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="public">Public</option>
+              <option value="private">Privé</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lieu -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Lieu</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+              Nom du lieu *
+            </label>
+            <input
+              type="text"
+              id="location"
+              [(ngModel)]="event.location"
+              name="location"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Nom du lieu"
+            />
+          </div>
+
+          <div>
+            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+              Adresse
+            </label>
+            <input
+              type="text"
+              id="address"
+              [(ngModel)]="event.address"
+              name="address"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Adresse complète"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Paramètres</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="maxParticipants" class="block text-sm font-medium text-gray-700 mb-2">
+              Nombre maximum de participants
+            </label>
+            <input
+              type="number"
+              id="maxParticipants"
+              [(ngModel)]="event.maxParticipants"
+              name="maxParticipants"
+              min="0"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="0 = illimité"
+            />
+          </div>
+
+          <div>
+            <label for="eventCode" class="block text-sm font-medium text-gray-700 mb-2">
+              Code d'événement
+            </label>
+            <input
+              type="text"
+              id="eventCode"
+              [(ngModel)]="event.eventCode"
+              name="eventCode"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Code unique"
+            />
+          </div>
+
+          <div>
+            <label for="pricePerPhoto" class="block text-sm font-medium text-gray-700 mb-2">
+              Prix par photo (€)
+            </label>
+            <input
+              type="number"
+              id="pricePerPhoto"
+              [(ngModel)]="event.pricePerPhoto"
+              name="pricePerPhoto"
+              min="0"
+              step="0.01"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div class="flex items-center space-x-6">
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                [(ngModel)]="event.allowDownload"
+                name="allowDownload"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span class="ml-2 text-sm text-gray-700">Autoriser le téléchargement</span>
+            </label>
+
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                [(ngModel)]="event.watermark"
+                name="watermark"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span class="ml-2 text-sm text-gray-700">Filigrane</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organisateur -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informations de l'organisateur</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="organizerName" class="block text-sm font-medium text-gray-700 mb-2">
+              Nom de l'organisateur *
+            </label>
+            <input
+              type="text"
+              id="organizerName"
+              [(ngModel)]="event.organizerName"
+              name="organizerName"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Nom complet"
+            />
+          </div>
+
+          <div>
+            <label for="organizerEmail" class="block text-sm font-medium text-gray-700 mb-2">
+              Email de l'organisateur *
+            </label>
+            <input
+              type="email"
+              id="organizerEmail"
+              [(ngModel)]="event.organizerEmail"
+              name="organizerEmail"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="email@exemple.com"
+            />
+          </div>
+
+          <div>
+            <label for="organizerPhone" class="block text-sm font-medium text-gray-700 mb-2">
+              Téléphone de l'organisateur
+            </label>
+            <input
+              type="tel"
+              id="organizerPhone"
+              [(ngModel)]="event.organizerPhone"
+              name="organizerPhone"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="+33 6 12 34 56 78"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Tags</h2>
+        
+        <div class="mb-4">
+          <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">
+            Ajouter des tags (séparez par des virgules)
+          </label>
+          <input
+            type="text"
+            id="tags"
+            (keyup)="onTagInput($event)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="mariage, élégant, château..."
+          />
+        </div>
+
+        <div *ngIf="event.tags.length > 0" class="flex flex-wrap gap-2">
+          <span
+            *ngFor="let tag of event.tags; let i = index"
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+          >
+            {{tag}}
+            <button
+              type="button"
+              (click)="removeTag(i)"
+              class="ml-1 h-4 w-4 text-blue-600 hover:text-blue-800"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Bénéficiaires -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Bénéficiaires</h2>
+        
+        <div class="mb-4">
+          <label for="beneficiaries" class="block text-sm font-medium text-gray-700 mb-2">
+            Ajouter des bénéficiaires (séparez par des virgules)
+          </label>
+          <input
+            type="text"
+            id="beneficiaries"
+            (keyup)="onBeneficiaryInput($event)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Association des Enfants, Croix Rouge..."
+          />
+        </div>
+
+        <div *ngIf="event.beneficiaries.length > 0" class="flex flex-wrap gap-2">
+          <span
+            *ngFor="let beneficiary of event.beneficiaries; let i = index"
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+          >
+            {{beneficiary}}
+            <button
+              type="button"
+              (click)="removeBeneficiary(i)"
+              class="ml-1 h-4 w-4 text-green-600 hover:text-green-800"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <button
+            type="button"
+            (click)="cancel()"
+            class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="!isValidForm() || isSaving"
+            class="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span *ngIf="!isSaving" class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Mettre à jour
+            </span>
+            <span *ngIf="isSaving" class="flex items-center">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Mise à jour...
+            </span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,231 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="container mx-auto px-4 max-w-2xl">
+    <!-- Back button -->
+    <button (click)="goBack()" class="mb-6 flex items-center text-indigo-600 hover:text-indigo-800">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Retour à l'événement
+    </button>
+
+    <!-- Scan Section -->
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">Scanner votre visage</h1>
+      <p class="text-gray-600 mb-8">
+        Positionnez votre visage dans le cadre ou téléchargez une photo pour trouver vos images
+      </p>
+
+      <!-- Error Messages -->
+      <div *ngIf="cameraError" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <span class="text-red-700">{{ cameraError }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="uploadError" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <span class="text-red-700">{{ uploadError }}</span>
+        </div>
+      </div>
+
+      <!-- Camera/Upload Area -->
+      <div class="mb-8">
+        <!-- Initial State -->
+        <div *ngIf="!isScanning && !isProcessing && !scanResult && !capturedPhoto" 
+             class="border-2 border-dashed border-gray-300 rounded-lg p-12 bg-gray-50">
+          <div class="text-6xl mb-4">📷</div>
+          <p class="text-gray-500 mb-6">Utilisez votre caméra ou téléchargez une photo</p>
+          
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button (click)="startCamera()" 
+                    [disabled]="!cameraSupported"
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+              📹 {{ cameraSupported ? 'Utiliser la caméra' : 'Caméra non disponible' }}
+            </button>
+            <button (click)="uploadPhoto()" 
+                    class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+              📁 Télécharger une photo
+            </button>
+          </div>
+
+          <!-- Hidden file input -->
+          <input #fileInput 
+                 type="file" 
+                 [accept]="getFileTypeAccepted()"
+                 (change)="onFileSelected($event)"
+                 class="hidden">
+        </div>
+
+        <!-- Camera Preview -->
+        <div *ngIf="isScanning" class="relative">
+          <div class="bg-black rounded-lg aspect-video flex items-center justify-center overflow-hidden">
+            <video #videoElement 
+                   autoplay 
+                   muted 
+                   playsinline
+                   class="w-full h-full object-cover">
+            </video>
+            <!-- Canvas caché pour la capture -->
+            <canvas #canvasElement class="hidden"></canvas>
+          </div>
+          
+          <!-- Overlay avec guide de positionnement -->
+          <div class="absolute inset-0 border-4 border-indigo-600 rounded-lg pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-64 border-2 border-indigo-400 rounded-full opacity-70"></div>
+            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
+              Positionnez votre visage dans l'ovale
+            </div>
+          </div>
+          
+          <div class="mt-4 flex gap-4 justify-center">
+            <button (click)="capturePhoto()" 
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+              📸 Capturer
+            </button>
+            <button (click)="stopCamera()" 
+                    class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+              ❌ Annuler
+            </button>
+          </div>
+        </div>
+
+        <!-- Photo Preview (after capture or upload) -->
+        <div *ngIf="capturedPhoto && !isProcessing && !scanResult" class="space-y-4">
+          <div class="relative">
+            <img [src]="capturedPhoto" 
+                 alt="Photo à analyser" 
+                 class="max-w-full h-64 object-cover mx-auto rounded-lg border-2 border-gray-200">
+          </div>
+          <div class="flex gap-4 justify-center">
+            <button (click)="startProcessing()" 
+                    class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+              🔍 Analyser cette photo
+            </button>
+            <button (click)="scanAgain()" 
+                    class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+              🔄 Changer de photo
+            </button>
+          </div>
+        </div>
+
+        <!-- Processing with detailed progress -->
+        <div *ngIf="isProcessing" class="py-12">
+          <div class="mb-6">
+            <div class="relative">
+              <!-- Progress bar -->
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-indigo-600 h-3 rounded-full transition-all duration-500 ease-out"
+                     [style.width.%]="getProgressPercentage()"></div>
+              </div>
+              <div class="text-center mt-2 text-sm text-gray-600">
+                {{ getProgressPercentage() | number:'1.0-0' }}% terminé
+              </div>
+            </div>
+          </div>
+
+          <!-- Current step indicator -->
+          <div class="space-y-3 mb-6">
+            <div *ngFor="let step of progressSteps; let i = index" 
+                 class="flex items-center"
+                 [class.text-green-600]="step.completed"
+                 [class.text-indigo-600]="i === currentStep && !step.completed"
+                 [class.text-gray-400]="i > currentStep">
+              
+              <div class="flex-shrink-0 w-6 h-6 mr-3">
+                <svg *ngIf="step.completed" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <div *ngIf="i === currentStep && !step.completed" 
+                     class="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                <div *ngIf="i > currentStep" 
+                     class="w-5 h-5 rounded-full border-2 border-current"></div>
+              </div>
+              
+              <span class="text-sm font-medium">{{ step.label }}</span>
+            </div>
+          </div>
+
+          <p class="text-gray-600 text-center">
+            Recherche de votre visage dans {{ totalPhotos }} photos...
+          </p>
+        </div>
+
+        <!-- Results -->
+        <div *ngIf="scanResult" class="text-left">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <div class="flex items-center mb-4">
+              <div class="text-2xl mr-3">✅</div>
+              <div>
+                <h3 class="text-lg font-semibold text-green-900">Scan terminé !</h3>
+                <p class="text-green-700">
+                  {{ foundPhotos }} photo{{ foundPhotos > 1 ? 's' : '' }} trouvée{{ foundPhotos > 1 ? 's' : '' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Preview of captured/uploaded photo -->
+            <div *ngIf="capturedPhoto" class="mt-4">
+              <p class="text-sm text-green-600 mb-2">Photo analysée :</p>
+              <img [src]="capturedPhoto" 
+                   alt="Photo analysée" 
+                   class="w-20 h-20 object-cover rounded-lg border-2 border-green-200">
+            </div>
+          </div>
+          
+          <div class="flex gap-4 justify-center">
+            <button (click)="viewResults()" 
+                    class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+              👀 Voir mes photos ({{ foundPhotos }})
+            </button>
+            <button (click)="scanAgain()" 
+                    class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+              🔄 Scanner à nouveau
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy Notice -->
+      <div class="bg-blue-50 rounded-lg p-6 text-left">
+        <h3 class="text-lg font-semibold text-blue-900 mb-3">🔒 Confidentialité et sécurité</h3>
+        <ul class="text-blue-700 text-sm space-y-2">
+          <li>• Vos données biométriques ne sont jamais stockées</li>
+          <li>• L'analyse se fait en temps réel et de manière sécurisée</li>
+          <li>• Seuls les résultats de correspondance sont conservés temporairement</li>
+          <li>• Conforme aux réglementations RGPD</li>
+          <li>• Les photos capturées sont supprimées après l'analyse</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Dynamic Tips -->
+    <div class="mt-8 bg-yellow-50 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-yellow-900 mb-3">💡 Conseils pour un meilleur scan</h3>
+      <ul class="text-yellow-700 text-sm space-y-2">
+        <li *ngFor="let tip of getScanTips()" class="flex items-start">
+          <span class="text-yellow-500 mr-2">•</span>
+          <span>{{ tip }}</span>
+        </li>
+      </ul>
+
+      <!-- Additional tips based on state -->
+      <div *ngIf="!cameraSupported" class="mt-4 p-3 bg-orange-100 rounded border border-orange-200">
+        <p class="text-orange-700 text-sm">
+          <strong>Caméra non disponible :</strong> Utilisez l'option "Télécharger une photo" pour continuer.
+        </p>
+      </div>
+
+      <div *ngIf="cameraError.includes('permissions')" class="mt-4 p-3 bg-orange-100 rounded border border-orange-200">
+        <p class="text-orange-700 text-sm">
+          <strong>Permissions caméra :</strong> Autorisez l'accès à la caméra dans les paramètres de votre navigateur pour utiliser cette fonctionnalité.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

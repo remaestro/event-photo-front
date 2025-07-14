@@ -1,0 +1,16 @@
+<!-- Skip Links for Accessibility -->
+<nav class="sr-only" aria-label="Liens de navigation rapide">
+  <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+  <a href="#navigation" class="skip-link">Aller à la navigation</a>
+  <a href="#search" class="skip-link">Aller à la recherche</a>
+</nav>
+
+<app-navigation id="navigation"></app-navigation>
+<main id="main-content" class="min-h-screen" role="main" tabindex="-1">
+  <router-outlet></router-outlet>
+</main>
+<app-notification></app-notification>
+<app-session-status></app-session-status>
+<app-accessibility-panel></app-accessibility-panel>
+
+

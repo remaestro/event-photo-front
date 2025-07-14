@@ -1,0 +1,52 @@
+/* Notification component styles */
+.notification-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  max-width: 400px;
+  width: 100%;
+  pointer-events: none;
+}
+
+.notification-item {
+  pointer-events: auto;
+  margin-bottom: 1rem;
+  transform: translateX(0);
+  transition: all 0.3s ease-in-out;
+}
+
+.notification-item.entering {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-item.leaving {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Ensure notifications don't get cut off on smaller screens */
+@media (max-width: 640px) {
+  .notification-container {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+  
+  .notification-item {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* High z-index to ensure notifications appear above everything */
+.notification-overlay {
+  z-index: 10000 !important;
+}
+
+/* Prevent scrollbar issues */
+.notification-container {
+  overflow: visible;
+}

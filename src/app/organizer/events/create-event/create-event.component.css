@@ -1,0 +1,83 @@
+/* Custom styles for create-event component */
+.tag-input-container {
+  position: relative;
+}
+
+.tag-suggestions {
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.beneficiary-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.beneficiary-card:hover {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.percentage-summary {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.form-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.form-section:hover {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.loading-spinner {
+  border-left-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Form validation styles */
+.field-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 0.1);
+}
+
+.field-success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 0.1);
+}
+
+/* Tag styles */
+.tag-item {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tag-suggestion:hover {
+  background-color: #dbeafe;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .form-section {
+    margin: 0 -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .tag-item {
+    font-size: 0.875rem;
+  }
+}

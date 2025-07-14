@@ -1,0 +1,476 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">📊 Statistiques Avancées</h1>
+        <p class="text-gray-600">Analytics et métriques de performance de la plateforme</p>
+      </div>
+      
+      <!-- Export Actions -->
+      <div class="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+        <select [(ngModel)]="exportFormat" 
+                class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="xlsx">Excel (.xlsx)</option>
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+        </select>
+        <button (click)="exportData()" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+          📥 Exporter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex items-center justify-center py-12">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p class="text-gray-600">Chargement des statistiques...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="space-y-8">
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Filtres</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+          <select [(ngModel)]="selectedPeriod" (change)="onPeriodChange()"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="7d">7 derniers jours</option>
+            <option value="30d">30 derniers jours</option>
+            <option value="90d">90 derniers jours</option>
+            <option value="1y">1 an</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Région</label>
+          <select [(ngModel)]="selectedRegion" (change)="onRegionChange()"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">Toutes les régions</option>
+            <option value="ile-de-france">Île-de-France</option>
+            <option value="paca">PACA</option>
+            <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
+            <option value="occitanie">Occitanie</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Type d'événement</label>
+          <select [(ngModel)]="selectedEventType" (change)="onEventTypeChange()"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">Tous les types</option>
+            <option value="mariage">Mariage</option>
+            <option value="concert">Concert</option>
+            <option value="entreprise">Événement d'entreprise</option>
+            <option value="festival">Festival</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth Metrics -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🚀 Métriques de croissance</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="text-3xl mb-2">👥</div>
+          <div class="flex items-center justify-center space-x-2">
+            <span [class]="'text-2xl font-bold ' + getGrowthColor(growthMetrics.userGrowth)">
+              +{{ formatPercentage(growthMetrics.userGrowth) }}
+            </span>
+            <span class="text-xl">{{ getGrowthIcon(growthMetrics.userGrowth) }}</span>
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Croissance utilisateurs</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">📅</div>
+          <div class="flex items-center justify-center space-x-2">
+            <span [class]="'text-2xl font-bold ' + getGrowthColor(growthMetrics.eventGrowth)">
+              +{{ formatPercentage(growthMetrics.eventGrowth) }}
+            </span>
+            <span class="text-xl">{{ getGrowthIcon(growthMetrics.eventGrowth) }}</span>
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Croissance événements</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">💰</div>
+          <div class="flex items-center justify-center space-x-2">
+            <span [class]="'text-2xl font-bold ' + getGrowthColor(growthMetrics.revenueGrowth)">
+              +{{ formatPercentage(growthMetrics.revenueGrowth) }}
+            </span>
+            <span class="text-xl">{{ getGrowthIcon(growthMetrics.revenueGrowth) }}</span>
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Croissance revenus</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">📸</div>
+          <div class="flex items-center justify-center space-x-2">
+            <span [class]="'text-2xl font-bold ' + getGrowthColor(growthMetrics.photoGrowth)">
+              +{{ formatPercentage(growthMetrics.photoGrowth) }}
+            </span>
+            <span class="text-xl">{{ getGrowthIcon(growthMetrics.photoGrowth) }}</span>
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Croissance photos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversion Rates -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🎯 Taux de conversion</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="text-3xl mb-2">👀</div>
+          <div [class]="'text-2xl font-bold ' + getConversionColor(conversionRates.visitorToUser)">
+            {{ formatPercentage(conversionRates.visitorToUser) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Visiteur → Utilisateur</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">🛍️</div>
+          <div [class]="'text-2xl font-bold ' + getConversionColor(conversionRates.userToClient)">
+            {{ formatPercentage(conversionRates.userToClient) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Utilisateur → Client</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">📷</div>
+          <div [class]="'text-2xl font-bold ' + getConversionColor(conversionRates.scanToSale)">
+            {{ formatPercentage(conversionRates.scanToSale) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Scan → Vente</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">💳</div>
+          <div [class]="'text-2xl font-bold ' + getConversionColor(conversionRates.cartToCheckout)">
+            {{ formatPercentage(conversionRates.cartToCheckout) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Panier → Commande</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regional Performance -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🗺️ Performance par région</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Région</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Utilisateurs</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Événements</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Revenus</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Panier moyen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let region of regionalPerformance" class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-3 px-4 font-medium text-gray-900">{{ region.region }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatNumber(region.users) }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatNumber(region.events) }}</td>
+              <td class="py-3 px-4 text-right font-medium text-green-600">{{ formatCurrency(region.revenue) }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatCurrency(region.averageOrderValue) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Event Type Performance -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🎭 Performance par type d'événement</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 font-medium text-gray-700">Type</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Événements</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Photos</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Ventes</th>
+              <th class="text-right py-3 px-4 font-medium text-gray-700">Prix moyen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let eventType of eventTypePerformance" class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-3 px-4 font-medium text-gray-900">{{ eventType.type }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatNumber(eventType.count) }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatNumber(eventType.totalPhotos) }}</td>
+              <td class="py-3 px-4 text-right text-gray-700">{{ formatNumber(eventType.totalSales) }}</td>
+              <td class="py-3 px-4 text-right font-medium text-blue-600">{{ formatCurrency(eventType.averagePrice) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Usage Trends Chart Placeholder -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">📈 Tendances d'utilisation</h2>
+      <div class="h-80 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+        <div class="text-center">
+          <div class="text-4xl mb-2">📊</div>
+          <p class="text-lg font-medium">Graphique des tendances</p>
+          <p class="text-sm">(À implémenter avec Chart.js)</p>
+          <p class="text-xs mt-2">Données disponibles: {{ usageTrends.length }} points</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Reports -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">📋 Rapports personnalisés</h2>
+      
+      <!-- Existing Reports -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Rapports existants</h3>
+        <div class="space-y-4">
+          <div *ngFor="let report of customReports" 
+               class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+            <div class="flex items-center justify-between">
+              <div class="flex-1">
+                <h4 class="font-medium text-gray-900">{{ report.name }}</h4>
+                <p class="text-sm text-gray-600 mt-1">{{ report.description }}</p>
+                <p class="text-xs text-gray-500 mt-2" *ngIf="report.lastGenerated">
+                  Dernière génération: {{ report.lastGenerated | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+              </div>
+              <div class="flex items-center space-x-2 ml-4">
+                <button (click)="generateReport(report.id)" 
+                        class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                  Générer
+                </button>
+                <button (click)="deleteReport(report.id)" 
+                        class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Report Builder -->
+      <div class="border-t border-gray-200 pt-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Créer un nouveau rapport</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nom du rapport</label>
+            <input [(ngModel)]="newReport.name" 
+                   type="text" 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Ex: Analyse mensuelle des ventes">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <input [(ngModel)]="newReport.description" 
+                   type="text" 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Description du rapport">
+          </div>
+        </div>
+        
+        <div class="mt-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Métriques à inclure</label>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div *ngFor="let metric of availableMetrics" class="flex items-center">
+              <input type="checkbox" 
+                     [checked]="newReport.metrics?.includes(metric) || false"
+                     (change)="onMetricChange($event, metric)"
+                     class="mr-2">
+              <label class="text-sm text-gray-700">{{ metric.replace('_', ' ') }}</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end">
+          <button (click)="createCustomReport()" 
+                  class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">
+            Créer le rapport
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Metrics Dashboard -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">📊 Métriques Avancées</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="text-3xl mb-2">🔄</div>
+          <div class="text-2xl font-bold text-blue-600">{{ formatPercentage(advancedMetrics.userRetentionRate) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Taux de rétention</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">⏱️</div>
+          <div class="text-2xl font-bold text-green-600">{{ advancedMetrics.averageSessionDuration }}min</div>
+          <p class="text-gray-600 text-sm mt-1">Durée moyenne session</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">🚪</div>
+          <div class="text-2xl font-bold text-orange-600">{{ formatPercentage(advancedMetrics.bounceRate) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Taux de rebond</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">💎</div>
+          <div class="text-2xl font-bold text-purple-600">{{ formatCurrency(advancedMetrics.customerLifetimeValue) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Valeur vie client</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">🔁</div>
+          <div class="text-2xl font-bold text-indigo-600">{{ formatCurrency(advancedMetrics.monthlyRecurringRevenue) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Revenus récurrents</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">📉</div>
+          <div class="text-2xl font-bold text-red-600">{{ formatPercentage(advancedMetrics.churnRate) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Taux d'attrition</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performers -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🏆 Top Performers</h2>
+      <div class="space-y-4">
+        <div *ngFor="let performer of topPerformers; let i = index" 
+             class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-4">
+            <div class="flex-shrink-0">
+              <div class="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                {{ i + 1 }}
+              </div>
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">{{ performer.name }}</h3>
+              <p class="text-sm text-gray-600">{{ performer.metric }}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-lg font-bold text-gray-900">
+              {{ performer.metric.includes('€') ? formatCurrency(performer.value) : formatNumber(performer.value) }}
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [class]="performer.type === 'organizer' ? 'bg-green-100 text-green-800' : 
+                           performer.type === 'event' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'">
+              {{ performer.type === 'organizer' ? 'Organisateur' : 
+                 performer.type === 'event' ? 'Événement' : 'Photo' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Health Monitoring -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">🔧 Santé du Système</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="text-3xl mb-2">🚀</div>
+          <div class="text-2xl font-bold text-green-600">{{ formatPercentage(systemHealth.uptime) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Disponibilité</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">⚡</div>
+          <div class="text-2xl font-bold text-blue-600">{{ systemHealth.responseTime }}ms</div>
+          <p class="text-gray-600 text-sm mt-1">Temps de réponse</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">❌</div>
+          <div class="text-2xl font-bold text-orange-600">{{ formatPercentage(systemHealth.errorRate) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Taux d'erreur</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">🔗</div>
+          <div class="text-2xl font-bold text-purple-600">{{ formatNumber(systemHealth.activeConnections) }}</div>
+          <p class="text-gray-600 text-sm mt-1">Connexions actives</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">🧠</div>
+          <div [class]="'text-2xl font-bold ' + (systemHealth.memoryUsage > 80 ? 'text-red-600' : systemHealth.memoryUsage > 60 ? 'text-yellow-600' : 'text-green-600')">
+            {{ formatPercentage(systemHealth.memoryUsage) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Utilisation mémoire</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl mb-2">💻</div>
+          <div [class]="'text-2xl font-bold ' + (systemHealth.cpuUsage > 80 ? 'text-red-600' : systemHealth.cpuUsage > 60 ? 'text-yellow-600' : 'text-green-600')">
+            {{ formatPercentage(systemHealth.cpuUsage) }}
+          </div>
+          <p class="text-gray-600 text-sm mt-1">Utilisation CPU</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real-time Analytics Controls -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">📡 Surveillance Temps Réel</h2>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-medium text-gray-900">Mise à jour automatique</h3>
+          <p class="text-sm text-gray-600">Actualise les métriques toutes les 30 secondes</p>
+        </div>
+        <div class="flex space-x-3">
+          <button (click)="startRealTimeUpdates()" 
+                  class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium">
+            ▶️ Démarrer
+          </button>
+          <button (click)="stopRealTimeUpdates()" 
+                  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium">
+            ⏹️ Arrêter
+          </button>
+          <button (click)="loadStatistics()" 
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+            🔄 Actualiser
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Analytics Summary -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-sm p-6 text-white">
+      <h2 class="text-xl font-bold mb-6">📈 Résumé Analytique</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+        <div>
+          <div class="text-2xl font-bold">{{ formatCurrency(getTotalRevenue()) }}</div>
+          <p class="text-blue-100">Revenus Totaux</p>
+        </div>
+        <div>
+          <div class="text-2xl font-bold">{{ formatPercentage(getAverageConversionRate()) }}</div>
+          <p class="text-blue-100">Conversion Moyenne</p>
+        </div>
+        <div>
+          <div class="text-2xl font-bold">{{ getTopPerformingRegion().region }}</div>
+          <p class="text-blue-100">Région Leader</p>
+        </div>
+        <div>
+          <div class="text-2xl font-bold">{{ getTopPerformingEventType().type }}</div>
+          <p class="text-blue-100">Type Événement Top</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

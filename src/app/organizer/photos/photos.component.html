@@ -1,0 +1,251 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <button 
+        (click)="goBack()"
+        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Retour aux événements
+      </button>
+      
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Gestion des Photos</h1>
+          <p class="mt-2 text-gray-600" *ngIf="event">
+            {{ event.name }} - {{ formatDate(event.date) }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!isLoading">
+      <!-- Upload Stats -->
+      <div class="bg-white rounded-lg shadow mb-8 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Statistiques d'Upload</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="text-3xl font-bold text-blue-600">{{ uploadStats.total }}</div>
+            <div class="text-sm text-gray-500">Photos totales</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-green-600">{{ uploadStats.completed }}</div>
+            <div class="text-sm text-gray-500">Terminées</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-red-600">{{ uploadStats.failed }}</div>
+            <div class="text-sm text-gray-500">Échecs</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-purple-600">{{ formatFileSize(uploadStats.totalSize) }}</div>
+            <div class="text-sm text-gray-500">Taille totale</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Zone -->
+      <div 
+        class="bg-white rounded-lg shadow mb-8 p-8 border-2 border-dashed transition-colors"
+        [ngClass]="{'border-blue-400 bg-blue-50': isDragOver, 'border-gray-300': !isDragOver}"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)">
+        <div class="text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="mt-4">
+            <label for="file-upload" class="cursor-pointer">
+              <span class="mt-2 block text-sm font-medium text-gray-900">
+                Glissez-déposez vos photos ici, ou 
+                <span class="text-blue-600 hover:text-blue-500">parcourez</span>
+              </span>
+              <input 
+                id="file-upload" 
+                name="file-upload" 
+                type="file" 
+                class="sr-only" 
+                multiple 
+                accept="image/*"
+                (change)="onFileSelect($event)">
+            </label>
+            <p class="mt-2 text-xs text-gray-500">
+              PNG, JPG, HEIC jusqu'à 10MB chacune
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions -->
+      <div *ngIf="showBulkActions" class="bg-white rounded-lg shadow mb-6 p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium text-gray-700">
+              {{ selectedPhotos.size }} photo(s) sélectionnée(s)
+            </span>
+            <div class="flex space-x-2">
+              <input
+                type="text"
+                [(ngModel)]="bulkTags"
+                placeholder="Tags (séparés par des virgules)"
+                class="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <button
+                (click)="applyBulkTags()"
+                class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                Appliquer tags
+              </button>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button
+              (click)="deselectAllPhotos()"
+              class="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">
+              Désélectionner
+            </button>
+            <button
+              (click)="deleteSelected()"
+              class="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photos Grid -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+              Photos ({{ photos.length }})
+            </h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Gérez vos photos d'événement avec un watermark automatique.
+            </p>
+          </div>
+          <div class="flex space-x-2">
+            <button
+              (click)="selectAllPhotos()"
+              class="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">
+              Tout sélectionner
+            </button>
+          </div>
+        </div>
+        
+        <div *ngIf="photos.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+          <div *ngFor="let photo of photos" class="relative group">
+            <!-- Selection checkbox -->
+            <div class="absolute top-2 left-2 z-10">
+              <input
+                type="checkbox"
+                [checked]="selectedPhotos.has(photo.id)"
+                (change)="togglePhotoSelection(photo.id)"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            </div>
+            
+            <!-- Status badge -->
+            <div class="absolute top-2 right-2 z-10">
+              <span 
+                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                [ngClass]="getStatusColor(photo.status)">
+                {{ getStatusText(photo.status) }}
+              </span>
+            </div>
+
+            <!-- Photo container -->
+            <div class="bg-gray-200 aspect-w-4 aspect-h-3 rounded-lg overflow-hidden">
+              <div *ngIf="photo.status === 'uploading' || photo.status === 'processing'" 
+                   class="flex items-center justify-center bg-gray-100">
+                <div class="text-center">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <div class="text-sm text-gray-600">{{ photo.progress.toFixed(0) }}%</div>
+                  <div class="w-32 bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      [style.width.%]="photo.progress">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <img 
+                *ngIf="photo.thumbnailUrl && photo.status === 'completed'"
+                [src]="getPhotoUrl(photo.id, 'thumbnail')" 
+                [alt]="photo.originalName"
+                (error)="onImageError($event)"
+                class="w-full h-full object-cover group-hover:opacity-75 transition-opacity">
+              
+              <div *ngIf="photo.status === 'failed'" 
+                   class="flex items-center justify-center bg-red-50">
+                <div class="text-center">
+                  <svg class="mx-auto h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <button
+                    (click)="retryUpload(photo.id)"
+                    class="mt-2 text-xs text-red-600 hover:text-red-800 font-medium">
+                    Réessayer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Photo info -->
+            <div class="mt-2">
+              <div class="text-sm font-medium text-gray-900 truncate">{{ photo.originalName }}</div>
+              <div class="text-xs text-gray-500">
+                {{ formatFileSize(photo.size) }} • {{ formatDate(photo.uploadDate) }}
+              </div>
+              <div *ngIf="photo.metadata.width && photo.metadata.height" class="text-xs text-gray-500">
+                {{ photo.metadata.width }}×{{ photo.metadata.height }}px
+                <span *ngIf="photo.metadata.camera"> • {{ photo.metadata.camera }}</span>
+              </div>
+              
+              <!-- Tags -->
+              <div *ngIf="photo.tags.length > 0" class="mt-1 flex flex-wrap gap-1">
+                <span *ngFor="let tag of photo.tags" 
+                      class="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-2 flex justify-between items-center">
+              <div class="flex space-x-1">
+                <button *ngIf="photo.status === 'completed'"
+                        class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                  Voir
+                </button>
+                <button *ngIf="photo.status === 'completed'"
+                        class="text-green-600 hover:text-green-800 text-xs font-medium">
+                  Éditer
+                </button>
+              </div>
+              <button
+                (click)="deletePhoto(photo.id)"
+                class="text-red-600 hover:text-red-800 text-xs font-medium">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="photos.length === 0" class="px-4 py-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune photo</h3>
+          <p class="mt-1 text-sm text-gray-500">Commencez par uploader des photos pour votre événement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

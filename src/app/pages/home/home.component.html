@@ -1,0 +1,170 @@
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">
+  <!-- Hero Section -->
+  <div class="container mx-auto px-4 py-16">
+    <div class="text-center mb-16">
+      <h1 class="text-5xl font-bold text-gray-900 mb-6">
+        Plateforme de Photos d'Événements
+      </h1>
+      <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+        Créez, gérez et monétisez vos événements photo avec notre reconnaissance faciale automatique.
+      </p>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col md:flex-row gap-6 justify-center items-center mb-16">
+      <a routerLink="/events/search" 
+         class="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg">
+        🔍 Trouver mes photos
+      </a>
+      
+      <!-- Bouton dynamique pour créer un événement -->
+      <button (click)="onCreateEventClick()" 
+              class="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg">
+        📅 {{ isAuthenticated ? 'Créer un événement' : 'Créer un événement' }}
+      </button>
+      
+      <!-- Bouton admin/connexion conditionnel -->
+      <a *ngIf="!isAuthenticated" 
+         routerLink="/login" 
+         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
+        🔧 Administration
+      </a>
+      
+      <!-- Bouton dashboard pour utilisateurs connectés -->
+      <a *ngIf="isAuthenticated && currentUser?.role === 'Organizer'" 
+         routerLink="/organizer/dashboard" 
+         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
+        📊 Mon Dashboard
+      </a>
+      
+      <a *ngIf="isAuthenticated && currentUser?.role === 'Admin'" 
+         routerLink="/admin/dashboard" 
+         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
+        🛡️ Administration
+      </a>
+    </div>
+
+    <!-- Message de bienvenue pour utilisateurs connectés -->
+    <div *ngIf="isAuthenticated && currentUser" 
+         class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-8 text-center">
+      👋 Bienvenue {{ currentUser.firstName }} {{ currentUser.lastName }} !
+      <span *ngIf="currentUser.role === 'Organizer'">Vous pouvez maintenant créer vos événements.</span>
+      <span *ngIf="currentUser.role === 'Admin'">Vous avez accès à l'administration complète.</span>
+    </div>
+
+    <!-- Role Features Grid -->
+    <div class="grid md:grid-cols-3 gap-8 mb-16">
+      <!-- Client Features -->
+      <div class="bg-white p-6 rounded-xl shadow-md text-center">
+        <div class="text-4xl mb-4">🎯</div>
+        <h3 class="text-xl font-semibold mb-3">Pour les Clients</h3>
+        <ul class="text-gray-600 text-left space-y-2">
+          <li>• Reconnaissance faciale automatique</li>
+          <li>• Aperçu gratuit avec watermark</li>
+          <li>• Achat sécurisé en haute qualité</li>
+          <li>• Téléchargement instantané</li>
+        </ul>
+      </div>
+
+      <!-- Organizer Features -->
+      <div class="bg-white p-6 rounded-xl shadow-md text-center">
+        <div class="text-4xl mb-4">📸</div>
+        <h3 class="text-xl font-semibold mb-3">Pour les Organisateurs</h3>
+        <ul class="text-gray-600 text-left space-y-2">
+          <li>• Création d'événements</li>
+          <li>• Upload illimité de photos</li>
+          <li>• Gestion des bénéficiaires</li>
+          <li>• Monétisation automatique</li>
+        </ul>
+      </div>
+
+      <!-- Admin Features -->
+      <div class="bg-white p-6 rounded-xl shadow-md text-center">
+        <div class="text-4xl mb-4">🛡️</div>
+        <h3 class="text-xl font-semibold mb-3">Pour les Administrateurs</h3>
+        <ul class="text-gray-600 text-left space-y-2">
+          <li>• Vue globale des événements</li>
+          <li>• Modération du contenu</li>
+          <li>• Gestion des utilisateurs</li>
+          <li>• Statistiques avancées</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- How it Works -->
+    <div class="bg-white rounded-xl shadow-md p-8 mb-16">
+      <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Comment ça marche ?</h2>
+      <div class="grid md:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="text-4xl mb-4">📅</div>
+          <h4 class="font-semibold text-gray-900 mb-2">1. Créer un événement</h4>
+          <p class="text-gray-600 text-sm">L'organisateur crée un événement et upload les photos</p>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl mb-4">🔍</div>
+          <h4 class="font-semibold text-gray-900 mb-2">2. Scan facial</h4>
+          <p class="text-gray-600 text-sm">Les clients scannent leur visage pour trouver leurs photos</p>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl mb-4">💳</div>
+          <h4 class="font-semibold text-gray-900 mb-2">3. Achat sécurisé</h4>
+          <p class="text-gray-600 text-sm">Paiement pour télécharger en haute qualité</p>
+        </div>
+        <div class="text-center">
+          <div class="text-4xl mb-4">💰</div>
+          <h4 class="font-semibold text-gray-900 mb-2">4. Partage des revenus</h4>
+          <p class="text-gray-600 text-sm">Répartition automatique entre organisateur et bénéficiaires</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="text-center">
+      <h2 class="text-3xl font-bold text-gray-900 mb-8">Événements récents</h2>
+      <div class="grid md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+             (click)="goToEvent('1')">
+          <div class="h-32 bg-gradient-to-r from-pink-400 to-purple-500"></div>
+          <div class="p-4">
+            <h4 class="font-semibold">Mariage de Sophie</h4>
+            <p class="text-sm text-gray-600">15 Juin 2024</p>
+            <p class="text-xs text-gray-500">Organisateur: Marc Photo</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+             (click)="goToEvent('2')">
+          <div class="h-32 bg-gradient-to-r from-blue-400 to-teal-500"></div>
+          <div class="p-4">
+            <h4 class="font-semibold">Marathon de Paris</h4>
+            <p class="text-sm text-gray-600">12 Juin 2024</p>
+            <p class="text-xs text-gray-500">Organisateur: Sport Events</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+             (click)="goToEvent('3')">
+          <div class="h-32 bg-gradient-to-r from-green-400 to-blue-500"></div>
+          <div class="p-4">
+            <h4 class="font-semibold">Festival de musique</h4>
+            <p class="text-sm text-gray-600">8 Juin 2024</p>
+            <p class="text-xs text-gray-500">Organisateur: Music Pro</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+             (click)="goToEvent('4')">
+          <div class="h-32 bg-gradient-to-r from-yellow-400 to-orange-500"></div>
+          <div class="p-4">
+            <h4 class="font-semibold">Soirée d'entreprise</h4>
+            <p class="text-sm text-gray-600">5 Juin 2024</p>
+            <p class="text-xs text-gray-500">Organisateur: Corp Events</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-8">
+        <a routerLink="/events/search" 
+           class="text-indigo-600 hover:text-indigo-800 font-semibold">
+          Voir tous les événements →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

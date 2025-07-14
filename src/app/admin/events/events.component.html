@@ -1,0 +1,569 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Gestion des Événements</h1>
+          <p class="text-gray-600 mt-2">Administration et supervision de tous les événements</p>
+        </div>
+        <div class="flex space-x-3">
+          <button (click)="exportEvents()" 
+                  class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Exporter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement des événements...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">📊</div>
+            <div>
+              <p class="text-2xl font-bold text-gray-900">{{ eventStats.total }}</p>
+              <p class="text-gray-600">Total événements</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">✅</div>
+            <div>
+              <p class="text-2xl font-bold text-green-600">{{ eventStats.active }}</p>
+              <p class="text-gray-600">Actifs</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">🏁</div>
+            <div>
+              <p class="text-2xl font-bold text-blue-600">{{ eventStats.completed }}</p>
+              <p class="text-gray-600">Terminés</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">⚠️</div>
+            <div>
+              <p class="text-2xl font-bold text-red-600">{{ eventStats.suspended }}</p>
+              <p class="text-gray-600">Suspendus</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">🚨</div>
+            <div>
+              <p class="text-2xl font-bold text-orange-600">{{ eventStats.reported }}</p>
+              <p class="text-gray-600">Signalés</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Filtres</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <!-- Search -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Recherche</label>
+            <input type="text" 
+                   [(ngModel)]="filters.search"
+                   (input)="onFilterChange()"
+                   placeholder="Nom, organisateur, code..."
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Statut</label>
+            <select [(ngModel)]="filters.status" 
+                    (change)="onFilterChange()"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Tous les statuts</option>
+              <option value="active">Actifs</option>
+              <option value="completed">Terminés</option>
+              <option value="suspended">Suspendus</option>
+              <option value="draft">Brouillons</option>
+            </select>
+          </div>
+
+          <!-- Visibility Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Visibilité</label>
+            <select [(ngModel)]="filters.visibility" 
+                    (change)="onFilterChange()"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Toutes</option>
+              <option value="public">Public</option>
+              <option value="private">Privé</option>
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          <div class="flex items-end">
+            <button (click)="clearFilters()" 
+                    class="w-full bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 transition-colors">
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Date Range -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Date du (événement)</label>
+              <input type="date" 
+                     [(ngModel)]="filters.dateFrom"
+                     (change)="onFilterChange()"
+                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Au</label>
+              <input type="date" 
+                     [(ngModel)]="filters.dateTo"
+                     (change)="onFilterChange()"
+                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+
+          <!-- Revenue Range -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Revenus min (€)</label>
+              <input type="number" 
+                     [(ngModel)]="filters.minRevenue"
+                     (input)="onFilterChange()"
+                     min="0"
+                     placeholder="0"
+                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Max (€)</label>
+              <input type="number" 
+                     [(ngModel)]="filters.maxRevenue"
+                     (input)="onFilterChange()"
+                     min="0"
+                     placeholder="∞"
+                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+
+          <!-- Additional Filters -->
+          <div class="flex items-end space-x-4">
+            <label class="flex items-center">
+              <input type="checkbox" 
+                     [(ngModel)]="filters.hasReports"
+                     (change)="onFilterChange()"
+                     class="rounded border-gray-300 mr-2">
+              <span class="text-sm text-gray-700">Avec signalements</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Table -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">
+            Événements ({{ filteredEvents.length }})
+          </h3>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Événement
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Organisateur
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date & Lieu
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Statut
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Photos
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Revenus
+                </th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let event of getPaginatedEvents()" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="text-lg mr-2">{{ getPriorityIcon(event) }}</div>
+                    <div class="text-lg mr-2">{{ getVisibilityIcon(event.visibility) }}</div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ event.name }}</div>
+                      <div class="text-sm text-gray-500">Code: {{ event.eventCode }}</div>
+                      <div *ngIf="event.reports.length > 0" class="text-xs text-red-600 font-medium">
+                        {{ event.reports.length }} signalement(s)
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ event.organizerName }}</div>
+                  <div class="text-sm text-gray-500">{{ event.organizerEmail }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ formatDate(event.date) }}</div>
+                  <div class="text-sm text-gray-500">{{ event.location }}</div>
+                  <div class="text-xs text-gray-400">{{ event.participantsCount }} participants</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusColor(event.status)">
+                    {{ getStatusText(event.status) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="space-y-1">
+                    <div>Total: {{ event.photosCount }}</div>
+                    <div class="text-xs">
+                      <span class="text-green-600">✓ {{ event.photosApproved }}</span>
+                      <span class="text-yellow-600 ml-2">⏳ {{ event.photosPending }}</span>
+                      <span class="text-red-600 ml-2">✗ {{ event.photosRejected }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500">{{ event.salesCount }} ventes</div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="font-medium">{{ formatCurrency(event.totalRevenue) }}</div>
+                  <div class="text-xs text-gray-500" *ngIf="event.beneficiaries.length > 0">
+                    {{ event.beneficiaries.length }} bénéficiaire(s)
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button (click)="viewEventDetails(event)" 
+                            class="text-blue-600 hover:text-blue-900">
+                      Voir
+                    </button>
+                    <button (click)="editEvent(event)" 
+                            class="text-purple-600 hover:text-purple-900">
+                      Modifier
+                    </button>
+                    <button *ngIf="event.status === 'suspended'" 
+                            (click)="activateEvent(event.id)"
+                            class="text-green-600 hover:text-green-900">
+                      Activer
+                    </button>
+                    <button *ngIf="event.status === 'active'" 
+                            (click)="suspendEvent(event.id, promptForReason('Raison de la suspension:'))"
+                            class="text-red-600 hover:text-red-900">
+                      Suspendre
+                    </button>
+                    <div class="relative group">
+                      <button class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                        </svg>
+                      </button>
+                      <div class="absolute right-0 top-6 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                        <button (click)="contactOrganizer(event.organizerEmail)" 
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          Contacter organisateur
+                        </button>
+                        <button (click)="deleteEvent(event.id)" 
+                                class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100">
+                          Supprimer définitivement
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button (click)="changePage(pagination.currentPage - 1)"
+                      [disabled]="pagination.currentPage <= 1"
+                      class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                Précédent
+              </button>
+              <button (click)="changePage(pagination.currentPage + 1)"
+                      [disabled]="pagination.currentPage >= pagination.totalPages"
+                      class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                Suivant
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Affichage 
+                  <span class="font-medium">{{ (pagination.currentPage - 1) * pagination.itemsPerPage + 1 }}</span>
+                  à 
+                  <span class="font-medium">{{ getMathMin(pagination.currentPage * pagination.itemsPerPage, filteredEvents.length) }}</span>
+                  sur 
+                  <span class="font-medium">{{ filteredEvents.length }}</span>
+                  résultats
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button (click)="changePage(pagination.currentPage - 1)"
+                          [disabled]="pagination.currentPage <= 1"
+                          class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                  
+                  <button *ngFor="let page of [].constructor(pagination.totalPages); let i = index"
+                          (click)="changePage(i + 1)"
+                          [class]="(i + 1) === pagination.currentPage ? 
+                                   'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-600 text-sm font-medium text-white' :
+                                   'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50'">
+                    {{ i + 1 }}
+                  </button>
+                  
+                  <button (click)="changePage(pagination.currentPage + 1)"
+                          [disabled]="pagination.currentPage >= pagination.totalPages"
+                          class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Details Modal -->
+  <div *ngIf="showEventModal && selectedEvent" 
+       class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+       (click)="closeEventModal()">
+    <div class="bg-white rounded-lg max-w-4xl max-h-full m-4 overflow-y-auto"
+         (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-medium text-gray-900">{{ selectedEvent.name }}</h3>
+            <p class="text-sm text-gray-600">Code: {{ selectedEvent.eventCode }}</p>
+          </div>
+          <button (click)="closeEventModal()" 
+                  class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="p-6 space-y-6">
+        <!-- Event Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="font-medium text-gray-900 mb-3">Informations générales</h4>
+            <dl class="space-y-2">
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Date</dt>
+                <dd class="text-sm text-gray-900">{{ formatDate(selectedEvent.date) }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Lieu</dt>
+                <dd class="text-sm text-gray-900">{{ selectedEvent.location }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Participants</dt>
+                <dd class="text-sm text-gray-900">{{ selectedEvent.participantsCount }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Visibilité</dt>
+                <dd class="text-sm text-gray-900">
+                  {{ getVisibilityIcon(selectedEvent.visibility) }} 
+                  {{ selectedEvent.visibility === 'public' ? 'Public' : 'Privé' }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div>
+            <h4 class="font-medium text-gray-900 mb-3">Organisateur</h4>
+            <dl class="space-y-2">
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Nom</dt>
+                <dd class="text-sm text-gray-900">{{ selectedEvent.organizerName }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Email</dt>
+                <dd class="text-sm text-gray-900">{{ selectedEvent.organizerEmail }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Créé le</dt>
+                <dd class="text-sm text-gray-900">{{ formatDateTime(selectedEvent.createdAt) }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Dernière activité</dt>
+                <dd class="text-sm text-gray-900">{{ formatDateTime(selectedEvent.lastActivity) }}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Photos Stats -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">Statistiques photos</h4>
+          <div class="grid grid-cols-4 gap-4">
+            <div class="text-center p-3 bg-gray-50 rounded">
+              <div class="text-lg font-semibold text-gray-900">{{ selectedEvent.photosCount }}</div>
+              <div class="text-sm text-gray-600">Total</div>
+            </div>
+            <div class="text-center p-3 bg-green-50 rounded">
+              <div class="text-lg font-semibold text-green-600">{{ selectedEvent.photosApproved }}</div>
+              <div class="text-sm text-gray-600">Approuvées</div>
+            </div>
+            <div class="text-center p-3 bg-yellow-50 rounded">
+              <div class="text-lg font-semibold text-yellow-600">{{ selectedEvent.photosPending }}</div>
+              <div class="text-sm text-gray-600">En attente</div>
+            </div>
+            <div class="text-center p-3 bg-red-50 rounded">
+              <div class="text-lg font-semibold text-red-600">{{ selectedEvent.photosRejected }}</div>
+              <div class="text-sm text-gray-600">Rejetées</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Info -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">Revenus</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="text-center p-3 bg-green-50 rounded">
+              <div class="text-lg font-semibold text-green-600">{{ formatCurrency(selectedEvent.totalRevenue) }}</div>
+              <div class="text-sm text-gray-600">Total</div>
+            </div>
+            <div class="text-center p-3 bg-blue-50 rounded">
+              <div class="text-lg font-semibold text-blue-600">{{ selectedEvent.salesCount }}</div>
+              <div class="text-sm text-gray-600">Ventes</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Beneficiaries -->
+        <div *ngIf="selectedEvent.beneficiaries.length > 0">
+          <h4 class="font-medium text-gray-900 mb-3">Bénéficiaires</h4>
+          <div class="space-y-2">
+            <div *ngFor="let beneficiary of selectedEvent.beneficiaries" 
+                 class="flex items-center justify-between p-3 bg-gray-50 rounded">
+              <div>
+                <div class="font-medium">{{ beneficiary.name }}</div>
+                <div class="text-sm text-gray-600">{{ beneficiary.email }}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium">{{ beneficiary.percentage }}%</div>
+                <div class="text-sm text-gray-600">{{ beneficiary.status }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reports -->
+        <div *ngIf="selectedEvent.reports.length > 0">
+          <h4 class="font-medium text-gray-900 mb-3">Signalements</h4>
+          <div class="space-y-3">
+            <div *ngFor="let report of selectedEvent.reports" 
+                 class="border border-gray-200 rounded p-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-medium">{{ report.reason }}</span>
+                <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">
+                  {{ report.status }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600">{{ report.description }}</p>
+              <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                <span>{{ report.reporterName }}</span>
+                <span>{{ formatDateTime(report.timestamp) }}</span>
+              </div>
+              <button *ngIf="report.status === 'pending'"
+                      (click)="resolveEventReport(report.id, selectedEvent.id)"
+                      class="mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200">
+                Résoudre
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div *ngIf="selectedEvent.tags.length > 0">
+          <h4 class="font-medium text-gray-900 mb-3">Tags</h4>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let tag of selectedEvent.tags" 
+                  class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+              {{ tag }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">Description</h4>
+          <p class="text-sm text-gray-600">{{ selectedEvent.description }}</p>
+        </div>
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div class="flex justify-end space-x-3">
+          <button (click)="contactOrganizer(selectedEvent.organizerEmail)" 
+                  class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+            Contacter organisateur
+          </button>
+          <button *ngIf="selectedEvent.status === 'suspended'" 
+                  (click)="activateEvent(selectedEvent.id); closeEventModal()" 
+                  class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
+            Activer événement
+          </button>
+          <button *ngIf="selectedEvent.status === 'active'" 
+                  (click)="suspendEvent(selectedEvent.id, promptForReason('Raison de la suspension:') || ''); closeEventModal()" 
+                  class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+            Suspendre événement
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

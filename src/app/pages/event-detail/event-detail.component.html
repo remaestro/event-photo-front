@@ -1,0 +1,92 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="container mx-auto px-4">
+    <!-- Back button -->
+    <button (click)="goBack()" class="mb-6 flex items-center text-indigo-600 hover:text-indigo-800">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Retour aux événements
+    </button>
+
+    <!-- Event Header -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+      <div class="h-64 bg-gradient-to-r from-pink-400 to-purple-500"></div>
+      <div class="p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Mariage de Sophie & Marc</h1>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-3">📅</span>
+              <span class="text-gray-700">15 Juin 2024, 14h00</span>
+            </div>
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-3">📍</span>
+              <span class="text-gray-700">Château de Versailles, France</span>
+            </div>
+            <div class="flex items-center mb-4">
+              <span class="text-2xl mr-3">📸</span>
+              <span class="text-gray-700">247 photos disponibles</span>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Description</h3>
+            <p class="text-gray-600">
+              Célébration du mariage de Sophie et Marc dans les magnifiques jardins du Château de Versailles. 
+              Une journée magique capturée par nos photographes professionnels.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Gallery Preview -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Aperçu des photos</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="aspect-square bg-gradient-to-br from-pink-200 to-purple-200 rounded-lg"></div>
+        <div class="aspect-square bg-gradient-to-br from-blue-200 to-teal-200 rounded-lg"></div>
+        <div class="aspect-square bg-gradient-to-br from-green-200 to-blue-200 rounded-lg"></div>
+        <div class="aspect-square bg-gradient-to-br from-yellow-200 to-orange-200 rounded-lg"></div>
+        <div class="aspect-square bg-gradient-to-br from-purple-200 to-pink-200 rounded-lg"></div>
+        <div class="aspect-square bg-gradient-to-br from-indigo-200 to-purple-200 rounded-lg"></div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Trouvez vos photos</h2>
+      <p class="text-lg text-gray-600 mb-6">
+        Utilisez notre technologie de reconnaissance faciale pour identifier toutes les photos où vous apparaissez
+      </p>
+      <button (click)="startFacialScan()" 
+              class="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg">
+        🔍 Démarrer le scan facial
+      </button>
+      <p class="text-sm text-gray-500 mt-4">
+        Processus 100% sécurisé - Vos données biométriques ne sont pas stockées
+      </p>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 bg-blue-50 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-blue-900 mb-4">Comment ça marche ?</h3>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="text-3xl mb-3">📱</div>
+          <h4 class="font-semibold text-blue-900 mb-2">1. Scannez votre visage</h4>
+          <p class="text-blue-700 text-sm">Prenez une photo ou utilisez votre caméra</p>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl mb-3">🔍</div>
+          <h4 class="font-semibold text-blue-900 mb-2">2. Analyse automatique</h4>
+          <p class="text-blue-700 text-sm">Notre IA trouve toutes vos photos</p>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl mb-3">💳</div>
+          <h4 class="font-semibold text-blue-900 mb-2">3. Achetez vos favoris</h4>
+          <p class="text-blue-700 text-sm">Téléchargez en haute qualité sans watermark</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
