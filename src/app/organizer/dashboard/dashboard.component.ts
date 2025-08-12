@@ -73,20 +73,17 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Charger les événements et statistiques de ventes en parallèle
-    forkJoin({
-      events: this.eventService.getAllEvents(),
-      salesStats: this.salesService.getOrganizerSalesStatistics(),
-      recentSales: this.salesService.getRecentSales(5)
-    }).subscribe({
-      next: ({ events, salesStats, recentSales }) => {
-        // Calculer les statistiques à partir des vraies données
+    // Charger seulement les événements de l'organisateur connecté pour l'instant
+    // Les autres services seront ajoutés quand ils seront disponibles
+    this.eventService.getMyEvents().subscribe({
+      next: (events) => {
+        // Calculer les statistiques à partir des événements uniquement
         this.stats = {
           totalEvents: events.length,
           totalPhotos: events.reduce((sum, event) => sum + event.photoCount, 0),
-          totalRevenue: salesStats.totalRevenue,
-          monthlyRevenue: this.calculateMonthlyRevenue(recentSales),
-          photosSold: salesStats.totalPhotosSold,
+          totalRevenue: 0, // À implémenter quand le service de ventes sera disponible
+          monthlyRevenue: 0, // À implémenter quand le service de ventes sera disponible
+          photosSold: 0, // À implémenter quand le service de ventes sera disponible
           activeEvents: events.filter(e => this.getEventStatus(e.date) === 'active').length
         };
 
@@ -100,16 +97,15 @@ export class DashboardComponent implements OnInit {
             location: event.location,
             photosCount: event.photoCount,
             status: this.getEventStatus(event.date),
-            revenue: this.calculateEventRevenue(event.id, recentSales)
+            revenue: 0 // À implémenter quand le service de ventes sera disponible
           }));
 
-        // Utiliser les vraies ventes récentes
-        this.recentSales = recentSales;
-
-        // TODO: Charger les événements de bénéficiaire depuis l'API
+        // Vides pour l'instant
+        this.recentSales = [];
         this.beneficiaryEvents = [];
 
         this.isLoading = false;
+        console.log('Dashboard loaded successfully with events:', events);
       },
       error: (error) => {
         console.error('Error loading dashboard data:', error);

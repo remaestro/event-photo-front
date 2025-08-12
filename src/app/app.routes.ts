@@ -4,10 +4,27 @@ import { authGuard, adminGuard, organizerGuard } from './shared/guards/auth.guar
 export const routes: Routes = [
   // Pages publiques
   { path: '', loadComponent: () => import('./pages/home/home.component').then(c => c.HomeComponent) },
-  { path: 'events/search', loadComponent: () => import('./pages/events-search/events-search.component').then(c => c.EventsSearchComponent) },
   { path: 'events/:id/public', loadComponent: () => import('./pages/event-public/event-public.component').then(c => c.EventPublicComponent) },
   { path: 'scan/:eventId', loadComponent: () => import('./pages/scan/scan.component').then(c => c.ScanComponent) },
   { path: 'how-it-works', loadComponent: () => import('./pages/how-it-works/how-it-works.component').then(c => c.HowItWorksComponent) },
+  
+  // Accès aux événements et photos - ACCESSIBLE SANS CONNEXION
+  { 
+    path: 'event-access', 
+    loadComponent: () => import('./client/event-access/event-access.component').then(c => c.EventAccessComponent)
+  },
+  { 
+    path: 'scan-results/:sessionId', 
+    loadComponent: () => import('./client/scan-results/scan-results.component').then(c => c.ScanResultsComponent)
+  },
+  { 
+    path: 'event/:eventCode/photos', 
+    loadComponent: () => import('./client/scan-results/scan-results.component').then(c => c.ScanResultsComponent)
+  },
+  { 
+    path: 'cart', 
+    loadComponent: () => import('./client/cart/cart.component').then(c => c.CartComponent)
+  },
   
   // Authentification
   { path: 'login', loadComponent: () => import('./auth/login/login.component').then(c => c.LoginComponent) },
@@ -21,17 +38,14 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   
-  // Client routes (pour l'achat de photos) - protégées par authentification
+  // Page unifiée "Mes Photos" - accessible à tous les utilisateurs connectés
   { 
-    path: 'scan-results/:sessionId', 
-    loadComponent: () => import('./client/scan-results/scan-results.component').then(c => c.ScanResultsComponent),
+    path: 'my-photos', 
+    loadComponent: () => import('./shared/pages/my-photos/my-photos.component').then(c => c.MyPhotosComponent),
     canActivate: [authGuard]
   },
-  { 
-    path: 'cart', 
-    loadComponent: () => import('./client/cart/cart.component').then(c => c.CartComponent),
-    canActivate: [authGuard]
-  },
+
+  // Client routes nécessitant une authentification
   { 
     path: 'checkout', 
     loadComponent: () => import('./client/checkout/checkout.component').then(c => c.CheckoutComponent),
@@ -77,6 +91,11 @@ export const routes: Routes = [
   { 
     path: 'organizer/photos', 
     loadComponent: () => import('./organizer/photos/photos.component').then(c => c.PhotosComponent),
+    canActivate: [organizerGuard]
+  },
+  { 
+    path: 'organizer/events/:id/beneficiaries', 
+    loadComponent: () => import('./organizer/beneficiaries/beneficiaries.component').then(c => c.BeneficiariesComponent),
     canActivate: [organizerGuard]
   },
   { 
@@ -135,7 +154,6 @@ export const routes: Routes = [
   { path: 'maintenance', loadComponent: () => import('./pages/maintenance/maintenance.component').then(c => c.MaintenanceComponent) },
   
   // Redirections pour compatibilité
-  { path: 'events', redirectTo: '/events/search' },
   { path: 'photographer', redirectTo: '/organizer' },
   
   // Wildcard route - doit être en dernier

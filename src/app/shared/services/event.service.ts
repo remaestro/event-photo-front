@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { delay, map, catchError } from 'rxjs/operators';
-import { EventsDataService, Event as ApiEvent, EventFilters, SearchEventsRequest } from './events-data.service';
+import { EventsDataService, Event as ApiEvent, EventFilters, SearchEventsRequest, EventsResponse } from './events-data.service';
 
 export interface Event {
   id: string;
@@ -73,6 +73,15 @@ export class EventService {
   getAllEvents(): Observable<Event[]> {
     return this.eventsDataService.getEvents({ page: 1, limit: 100 }).pipe(
       map(response => this.mapApiEventsToLocal(response.events))
+    );
+  }
+
+  /**
+   * Obtenir les événements de l'organisateur connecté
+   */
+  getMyEvents(): Observable<Event[]> {
+    return this.eventsDataService.getMyEvents().pipe(
+      map((response: EventsResponse) => this.mapApiEventsToLocal(response.events))
     );
   }
 

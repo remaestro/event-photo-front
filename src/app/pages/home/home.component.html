@@ -1,170 +1,170 @@
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">
-  <!-- Hero Section -->
-  <div class="container mx-auto px-4 py-16">
-    <div class="text-center mb-16">
-      <h1 class="text-5xl font-bold text-gray-900 mb-6">
-        Plateforme de Photos d'Événements
-      </h1>
-      <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-        Créez, gérez et monétisez vos événements photo avec notre reconnaissance faciale automatique.
-      </p>
+  <!-- Hero Section Moderne -->
+  <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-700">
+    <!-- Éléments décoratifs d'arrière-plan -->
+    <div class="absolute inset-0">
+      <div class="absolute top-0 left-0 w-72 h-72 bg-white opacity-10 rounded-full -translate-x-36 -translate-y-36 animate-pulse"></div>
+      <div class="absolute top-20 right-0 w-96 h-96 bg-white opacity-5 rounded-full translate-x-48 -translate-y-24"></div>
+      <div class="absolute bottom-0 left-1/4 w-64 h-64 bg-white opacity-10 rounded-full translate-y-32"></div>
     </div>
 
-    <!-- CTA Buttons -->
-    <div class="flex flex-col md:flex-row gap-6 justify-center items-center mb-16">
-      <a routerLink="/events/search" 
-         class="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg">
-        🔍 Trouver mes photos
-      </a>
-      
-      <!-- Bouton dynamique pour créer un événement -->
-      <button (click)="onCreateEventClick()" 
-              class="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg">
-        📅 {{ isAuthenticated ? 'Créer un événement' : 'Créer un événement' }}
-      </button>
-      
-      <!-- Bouton admin/connexion conditionnel -->
-      <a *ngIf="!isAuthenticated" 
-         routerLink="/login" 
-         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
-        🔧 Administration
-      </a>
-      
-      <!-- Bouton dashboard pour utilisateurs connectés -->
-      <a *ngIf="isAuthenticated && currentUser?.role === 'Organizer'" 
-         routerLink="/organizer/dashboard" 
-         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
-        📊 Mon Dashboard
-      </a>
-      
-      <a *ngIf="isAuthenticated && currentUser?.role === 'Admin'" 
-         routerLink="/admin/dashboard" 
-         class="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
-        🛡️ Administration
-      </a>
-    </div>
-
-    <!-- Message de bienvenue pour utilisateurs connectés -->
-    <div *ngIf="isAuthenticated && currentUser" 
-         class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-8 text-center">
-      👋 Bienvenue {{ currentUser.firstName }} {{ currentUser.lastName }} !
-      <span *ngIf="currentUser.role === 'Organizer'">Vous pouvez maintenant créer vos événements.</span>
-      <span *ngIf="currentUser.role === 'Admin'">Vous avez accès à l'administration complète.</span>
-    </div>
-
-    <!-- Role Features Grid -->
-    <div class="grid md:grid-cols-3 gap-8 mb-16">
-      <!-- Client Features -->
-      <div class="bg-white p-6 rounded-xl shadow-md text-center">
-        <div class="text-4xl mb-4">🎯</div>
-        <h3 class="text-xl font-semibold mb-3">Pour les Clients</h3>
-        <ul class="text-gray-600 text-left space-y-2">
-          <li>• Reconnaissance faciale automatique</li>
-          <li>• Aperçu gratuit avec watermark</li>
-          <li>• Achat sécurisé en haute qualité</li>
-          <li>• Téléchargement instantané</li>
-        </ul>
-      </div>
-
-      <!-- Organizer Features -->
-      <div class="bg-white p-6 rounded-xl shadow-md text-center">
-        <div class="text-4xl mb-4">📸</div>
-        <h3 class="text-xl font-semibold mb-3">Pour les Organisateurs</h3>
-        <ul class="text-gray-600 text-left space-y-2">
-          <li>• Création d'événements</li>
-          <li>• Upload illimité de photos</li>
-          <li>• Gestion des bénéficiaires</li>
-          <li>• Monétisation automatique</li>
-        </ul>
-      </div>
-
-      <!-- Admin Features -->
-      <div class="bg-white p-6 rounded-xl shadow-md text-center">
-        <div class="text-4xl mb-4">🛡️</div>
-        <h3 class="text-xl font-semibold mb-3">Pour les Administrateurs</h3>
-        <ul class="text-gray-600 text-left space-y-2">
-          <li>• Vue globale des événements</li>
-          <li>• Modération du contenu</li>
-          <li>• Gestion des utilisateurs</li>
-          <li>• Statistiques avancées</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- How it Works -->
-    <div class="bg-white rounded-xl shadow-md p-8 mb-16">
-      <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Comment ça marche ?</h2>
-      <div class="grid md:grid-cols-4 gap-6">
-        <div class="text-center">
-          <div class="text-4xl mb-4">📅</div>
-          <h4 class="font-semibold text-gray-900 mb-2">1. Créer un événement</h4>
-          <p class="text-gray-600 text-sm">L'organisateur crée un événement et upload les photos</p>
+    <div class="relative container mx-auto px-4 py-20 lg:py-32">
+      <div class="text-center">
+        <!-- Badge/Tag -->
+        <div class="inline-flex items-center px-4 py-2 bg-black bg-opacity-30 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-8 border border-white border-opacity-30">
+          <span class="mr-2">🚀</span>
+          Nouvelle génération de vente photo
         </div>
-        <div class="text-center">
-          <div class="text-4xl mb-4">🔍</div>
-          <h4 class="font-semibold text-gray-900 mb-2">2. Scan facial</h4>
-          <p class="text-gray-600 text-sm">Les clients scannent leur visage pour trouver leurs photos</p>
-        </div>
-        <div class="text-center">
-          <div class="text-4xl mb-4">💳</div>
-          <h4 class="font-semibold text-gray-900 mb-2">3. Achat sécurisé</h4>
-          <p class="text-gray-600 text-sm">Paiement pour télécharger en haute qualité</p>
-        </div>
-        <div class="text-center">
-          <div class="text-4xl mb-4">💰</div>
-          <h4 class="font-semibold text-gray-900 mb-2">4. Partage des revenus</h4>
-          <p class="text-gray-600 text-sm">Répartition automatique entre organisateur et bénéficiaires</p>
-        </div>
-      </div>
-    </div>
 
-    <!-- Recent Events -->
-    <div class="text-center">
-      <h2 class="text-3xl font-bold text-gray-900 mb-8">Événements récents</h2>
-      <div class="grid md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-             (click)="goToEvent('1')">
-          <div class="h-32 bg-gradient-to-r from-pink-400 to-purple-500"></div>
-          <div class="p-4">
-            <h4 class="font-semibold">Mariage de Sophie</h4>
-            <p class="text-sm text-gray-600">15 Juin 2024</p>
-            <p class="text-xs text-gray-500">Organisateur: Marc Photo</p>
+        <!-- Titre principal -->
+        <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+          Vendez vos photos
+          <span class="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
+            d'événements
+          </span>
+          <span class="block">facilement</span>
+        </h1>
+
+        <!-- Sous-titre -->
+        <p class="text-xl md:text-2xl text-indigo-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+          La plateforme tout-en-un pour <strong class="text-white">créer</strong>, <strong class="text-white">partager</strong> et <strong class="text-white">monétiser</strong> vos événements photo avec partage automatique des revenus
+        </p>
+
+        <!-- Statistiques impressionnantes -->
+        <div class="flex flex-col md:flex-row justify-center items-center gap-8 mb-12 text-white">
+          <div class="text-center">
+            <div class="text-3xl font-bold text-yellow-300">10K+</div>
+            <div class="text-sm text-indigo-200">Photos vendues</div>
+          </div>
+          <div class="hidden md:block w-px h-12 bg-white opacity-30"></div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-yellow-300">500+</div>
+            <div class="text-sm text-indigo-200">Événements créés</div>
+          </div>
+          <div class="hidden md:block w-px h-12 bg-white opacity-30"></div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-yellow-300">95%</div>
+            <div class="text-sm text-indigo-200">Satisfaction client</div>
           </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-             (click)="goToEvent('2')">
-          <div class="h-32 bg-gradient-to-r from-blue-400 to-teal-500"></div>
-          <div class="p-4">
-            <h4 class="font-semibold">Marathon de Paris</h4>
-            <p class="text-sm text-gray-600">12 Juin 2024</p>
-            <p class="text-xs text-gray-500">Organisateur: Sport Events</p>
-          </div>
+
+        <!-- CTA Buttons principaux -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <button (click)="onCreateEventClick()" 
+                  class="group relative px-8 py-4 bg-white text-indigo-600 rounded-xl text-lg font-bold hover:bg-gray-50 transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1">
+            <span class="flex items-center">
+              <span class="mr-3 text-2xl group-hover:animate-bounce">🎯</span>
+              {{ isAuthenticated ? 'Créer mon événement' : 'Commencer gratuitement' }}
+            </span>
+          </button>
+          
+          <a routerLink="/event-access" 
+             class="group px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl text-lg font-bold hover:bg-white hover:text-indigo-600 transition-all duration-300">
+            <span class="flex items-center">
+              <span class="mr-3 text-2xl group-hover:animate-pulse">🔑</span>
+              J'ai un code d'événement
+            </span>
+          </a>
         </div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-             (click)="goToEvent('3')">
-          <div class="h-32 bg-gradient-to-r from-green-400 to-blue-500"></div>
-          <div class="p-4">
-            <h4 class="font-semibold">Festival de musique</h4>
-            <p class="text-sm text-gray-600">8 Juin 2024</p>
-            <p class="text-xs text-gray-500">Organisateur: Music Pro</p>
+
+        <!-- Trust indicators -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-6 text-indigo-200 text-sm">
+          <div class="flex items-center">
+            <span class="mr-2">✅</span>
+            Gratuit pour commencer
           </div>
-        </div>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-             (click)="goToEvent('4')">
-          <div class="h-32 bg-gradient-to-r from-yellow-400 to-orange-500"></div>
-          <div class="p-4">
-            <h4 class="font-semibold">Soirée d'entreprise</h4>
-            <p class="text-sm text-gray-600">5 Juin 2024</p>
-            <p class="text-xs text-gray-500">Organisateur: Corp Events</p>
+          <div class="flex items-center">
+            <span class="mr-2">⚡</span>
+            Configuration en 2 minutes
+          </div>
+          <div class="flex items-center">
+            <span class="mr-2">🔒</span>
+            Paiements sécurisés
           </div>
         </div>
       </div>
-      <div class="mt-8">
-        <a routerLink="/events/search" 
-           class="text-indigo-600 hover:text-indigo-800 font-semibold">
-          Voir tous les événements →
+    </div>
+
+    <!-- Vague de transition -->
+    <div class="absolute bottom-0 left-0 right-0">
+      <svg viewBox="0 0 1440 120" class="w-full h-auto">
+        <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" 
+              fill="rgb(249 250 251)" class="fill-current text-gray-50"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Section principale du contenu -->
+  <div class="bg-gray-50 relative">
+    <div class="container mx-auto px-4 py-16">
+      <!-- Message de bienvenue pour utilisateurs connectés -->
+      <div *ngIf="isAuthenticated && currentUser" 
+           class="bg-gradient-to-r from-green-400 to-green-600 text-white px-6 py-4 rounded-2xl mb-12 text-center shadow-lg">
+        <div class="flex items-center justify-center mb-2">
+          <span class="text-2xl mr-3">👋</span>
+          <span class="text-lg font-semibold">Bienvenue {{ currentUser.firstName }} {{ currentUser.lastName }} !</span>
+        </div>
+        <div class="text-green-100">
+          <span *ngIf="currentUser.role === 'Organizer'">Vous pouvez maintenant créer et gérer vos événements.</span>
+          <span *ngIf="currentUser.role === 'Admin'">Vous avez accès à l'administration complète de la plateforme.</span>
+        </div>
+      </div>
+
+      <!-- Actions rapides pour utilisateurs connectés -->
+      <div *ngIf="isAuthenticated" class="grid md:grid-cols-3 gap-6 mb-16">
+        <a *ngIf="currentUser?.role === 'Organizer'" 
+           routerLink="/organizer/dashboard" 
+           class="group bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center transform hover:-translate-y-2">
+          <div class="text-4xl mb-4 group-hover:animate-bounce">📊</div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Mon Dashboard</h3>
+          <p class="text-gray-600">Gérez vos événements et revenus</p>
+        </a> 
+        
+        <a *ngIf="currentUser?.role === 'Organizer'" 
+           routerLink="/organizer/events" 
+           class="group bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center transform hover:-translate-y-2">
+          <div class="text-4xl mb-4 group-hover:animate-bounce">📅</div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Mes Événements</h3>
+          <p class="text-gray-600">Consultez et modifiez vos événements</p>
+        </a>
+        
+        <a *ngIf="currentUser?.role === 'Admin'" 
+           routerLink="/admin/dashboard" 
+           class="group bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center transform hover:-translate-y-2">
+          <div class="text-4xl mb-4 group-hover:animate-bounce">🛡️</div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Administration</h3>
+          <p class="text-gray-600">Gérez la plateforme complète</p>
         </a>
       </div>
+
+      <!-- Quick Start Guide -->
+      <div class="bg-white rounded-xl shadow-md p-8 mb-16">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">Commencez en 3 étapes</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="text-center">
+            <div class="text-5xl mb-4">📅</div>
+            <h4 class="font-semibold text-gray-900 mb-2">Créer</h4>
+            <p class="text-gray-600">Créez votre événement et uploadez vos photos</p>
+          </div>
+          <div class="text-center">
+            <div class="text-5xl mb-4">🔑</div>
+            <h4 class="font-semibold text-gray-900 mb-2">Partager</h4>
+            <p class="text-gray-600">Partagez le code d'accès avec vos participants</p>
+          </div>
+          <div class="text-center">
+            <div class="text-5xl mb-4">💰</div>
+            <h4 class="font-semibold text-gray-900 mb-2">Vendre</h4>
+            <p class="text-gray-600">Vendez vos photos et partagez les revenus</p>
+          </div>
+        </div>
+        <div class="text-center mt-8">
+          <a routerLink="/how-it-works" 
+             class="text-indigo-600 hover:text-indigo-800 font-semibold">
+            En savoir plus sur le fonctionnement →
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

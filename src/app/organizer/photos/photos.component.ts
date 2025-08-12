@@ -68,6 +68,10 @@ export class PhotosComponent implements OnInit, OnDestroy {
   selectedPhotos: Set<string> = new Set();
   bulkTags: string = '';
   showBulkActions = false;
+  
+  // Modal pour afficher la photo
+  selectedPhotoForView: Photo | null = null;
+  showPhotoModal = false;
 
   constructor(
     private router: Router,
@@ -227,27 +231,21 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   onDragOver(event: DragEvent) {
     event.preventDefault();
-    this.isDragOver = true;
+    // Fonctionnalité d'upload supprimée
   }
 
   onDragLeave(event: DragEvent) {
     event.preventDefault();
-    this.isDragOver = false;
+    // Fonctionnalité d'upload supprimée
   }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
-    this.isDragOver = false;
-    
-    // Rediriger vers la page d'upload au lieu de gérer les fichiers ici
-    alert('Pour uploader des photos, utilisez la page d\'upload dédiée.');
-    this.router.navigate(['/organizer/events', this.eventId, 'upload']);
+    // Fonctionnalité d'upload supprimée - redirection supprimée
   }
 
   onFileSelect(event: Event) {
-    // Rediriger vers la page d'upload au lieu de gérer les fichiers ici
-    alert('Pour uploader des photos, utilisez la page d\'upload dédiée.');
-    this.router.navigate(['/organizer/events', this.eventId, 'upload']);
+    // Fonctionnalité d'upload supprimée - redirection supprimée
   }
 
   private updateUploadStats() {
@@ -370,12 +368,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
     }
   }
 
-  retryUpload(photoId: string) {
-    // Pour les photos réelles, rediriger vers la page d'upload
-    alert('Pour réessayer l\'upload, utilisez la page d\'upload dédiée.');
-    this.router.navigate(['/organizer/events', this.eventId, 'upload']);
-  }
-
   getStatusColor(status: string): string {
     switch (status) {
       case 'completed':
@@ -426,5 +418,27 @@ export class PhotosComponent implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/organizer/events']);
+  }
+
+  navigateToUpload() {
+    if (this.eventId) {
+      this.router.navigate(['/organizer/events', this.eventId, 'upload']);
+    }
+  }
+
+  /**
+   * Ouvrir la modal pour voir la photo avec watermark
+   */
+  viewPhoto(photo: Photo) {
+    this.selectedPhotoForView = photo;
+    this.showPhotoModal = true;
+  }
+
+  /**
+   * Fermer la modal de visualisation
+   */
+  closePhotoModal() {
+    this.showPhotoModal = false;
+    this.selectedPhotoForView = null;
   }
 }

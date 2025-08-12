@@ -14,7 +14,6 @@ import { EventService, Event, SearchFilters } from '../../shared/services/event.
 })
 export class EventsSearchComponent implements OnInit, OnDestroy {
   searchResults: Event[] = [];
-  popularEvents: Event[] = [];
   availableTags: string[] = [];
   
   // Filtres de recherche
@@ -42,7 +41,6 @@ export class EventsSearchComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.loadPopularEvents();
     this.loadAvailableTags();
   }
 
@@ -105,20 +103,6 @@ export class EventsSearchComponent implements OnInit, OnDestroy {
       return new Date(this.searchFilters.startDate) <= new Date(this.searchFilters.endDate);
     }
     return true;
-  }
-
-  // Charger les événements populaires
-  private loadPopularEvents() {
-    this.eventService.getPopularEvents(4)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (events) => {
-          this.popularEvents = events;
-        },
-        error: (error) => {
-          console.error('Erreur lors du chargement des événements populaires:', error);
-        }
-      });
   }
 
   // Charger les tags disponibles
@@ -258,13 +242,6 @@ export class EventsSearchComponent implements OnInit, OnDestroy {
     this.searchResults = [];
     this.hasSearched = false;
     this.searchError = '';
-  }
-
-  // Recherche rapide par événement populaire
-  searchPopularEvent(event: Event) {
-    this.clearFilters();
-    this.searchFilters.searchTerm = event.name;
-    this.searchEvents();
   }
 
   // Aller à un événement

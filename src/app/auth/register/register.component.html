@@ -2,18 +2,63 @@
   <div class="max-w-md w-full space-y-8">
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        Créer votre compte
+        {{ isInvitedUser ? 'Accepter l\'invitation' : 'Créer votre compte' }}
       </h2>
       <p class="mt-2 text-center text-sm text-gray-600">
-        Ou
-        <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-          connectez-vous à votre compte existant
-        </a>
+        <span *ngIf="!isInvitedUser">
+          Ou
+          <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+            connectez-vous à votre compte existant
+          </a>
+        </span>
+        <span *ngIf="isInvitedUser" class="text-green-600 font-medium">
+          🎉 Vous avez été invité(e) !
+        </span>
       </p>
     </div>
 
+    <!-- 🎯 Validation de l'invitation en cours -->
+    <div *ngIf="isValidatingInvitation" class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <h3 class="text-lg font-medium text-blue-900">Validation de l'invitation...</h3>
+      <p class="text-sm text-blue-700 mt-2">Vérification du lien d'invitation en cours</p>
+    </div>
+
+    <!-- 🎯 Informations d'invitation -->
+    <div *ngIf="isInvitedUser && invitationInfo && !isValidatingInvitation" 
+         class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
+      <div class="flex items-start space-x-3">
+        <div class="text-3xl">🎊</div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">
+            Invitation à l'événement
+          </h3>
+          <div class="space-y-2 text-sm">
+            <p class="text-gray-700">
+              <span class="font-medium">Événement :</span> 
+              <span class="text-green-700 font-bold">{{ invitationInfo.eventName }}</span>
+            </p>
+            <p class="text-gray-700">
+              <span class="font-medium">Organisateur :</span> 
+              {{ invitationInfo.organizerName }}
+            </p>
+            <div *ngIf="isInvitationExpiringSoon()" class="bg-yellow-100 border border-yellow-300 rounded-md p-2 mt-3">
+              <p class="text-yellow-800 text-xs">
+                ⏰ <strong>Attention :</strong> Cette invitation expire bientôt !
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 bg-white rounded-md p-3 border border-green-200">
+        <p class="text-sm text-gray-600">
+          En créant votre compte, vous accepterez automatiquement cette invitation et deviendrez bénéficiaire de l'événement.
+        </p>
+      </div>
+    </div>
+
     <!-- Role Selection (if not pre-selected) -->
-    <div *ngIf="!selectedRole" class="bg-white rounded-lg shadow-md p-6">
+    <div *ngIf="!selectedRole && !isInvitedUser" class="bg-white rounded-lg shadow-md p-6">
       <h3 class="text-lg font-medium text-gray-900 mb-4">Choisissez votre rôle</h3>
       <div class="grid grid-cols-1 gap-4">
         <button (click)="selectRole('organizer')" 
@@ -43,12 +88,17 @@
           <div class="text-2xl mr-3">{{ selectedRole === 'organizer' ? '📸' : '🛡️' }}</div>
           <div>
             <div class="font-medium">{{ selectedRole === 'organizer' ? 'Organisateur' : 'Administrateur' }}</div>
-            <div class="text-sm text-gray-500">{{ selectedRole === 'organizer' ? 'Créateur d\'événements' : 'Modérateur de plateforme' }}</div>
+            <div class="text-sm text-gray-500">
+              {{ isInvitedUser ? 'Bénéficiaire invité' : (selectedRole === 'organizer' ? 'Créateur d\'événements' : 'Modérateur de plateforme') }}
+            </div>
           </div>
         </div>
-        <button type="button" (click)="changeRole()" class="text-indigo-600 hover:text-indigo-500 text-sm">
+        <button *ngIf="!isInvitedUser" type="button" (click)="changeRole()" class="text-indigo-600 hover:text-indigo-500 text-sm">
           Changer
         </button>
+        <div *ngIf="isInvitedUser" class="text-green-600 text-sm font-medium">
+          ✓ Rôle défini par l'invitation
+        </div>
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-6 space-y-6">
@@ -154,12 +204,15 @@
         <div>
           <button type="submit" 
                   [disabled]="registerForm.invalid || isLoading"
-                  class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  [class]="isInvitedUser ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'">
             <span *ngIf="isLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             </span>
-            <span *ngIf="!isLoading">Créer mon compte</span>
-            <span *ngIf="isLoading">Création en cours...</span>
+            <span *ngIf="!isLoading && !isInvitedUser">Créer mon compte</span>
+            <span *ngIf="!isLoading && isInvitedUser">🎊 Accepter l'invitation et créer mon compte</span>
+            <span *ngIf="isLoading && !isInvitedUser">Création en cours...</span>
+            <span *ngIf="isLoading && isInvitedUser">Acceptation de l'invitation...</span>
           </button>
         </div>
       </div>
@@ -175,12 +228,13 @@
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-green-800">
-            Compte créé avec succès !
+            {{ isInvitedUser ? 'Invitation acceptée avec succès !' : 'Compte créé avec succès !' }}
           </h3>
           <div class="mt-2 text-sm text-green-700">
-            <p>Un email de confirmation a été envoyé à votre adresse. Veuillez cliquer sur le lien pour activer votre compte.</p>
+            <p *ngIf="!isInvitedUser">Un email de confirmation a été envoyé à votre adresse. Veuillez cliquer sur le lien pour activer votre compte.</p>
+            <p *ngIf="isInvitedUser">Vous êtes maintenant bénéficiaire de l'événement "{{ invitationInfo?.eventName }}". Redirection vers votre tableau de bord...</p>
           </div>
-          <div class="mt-4">
+          <div *ngIf="!isInvitedUser" class="mt-4">
             <div class="-mx-2 -my-1.5 flex">
               <button (click)="goToLogin()" 
                       class="bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600">

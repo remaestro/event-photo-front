@@ -80,10 +80,22 @@ export class AuthService {
 
     return this.authDataService.register(apiRequest).pipe(
       map(response => {
-        if (response.success) {
+        if (response.success && response.user) {
+          // 🎯 IMPORTANT: Include the user object with ID for invitation acceptance
+          const user: User = {
+            id: response.user.id,
+            email: response.user.email,
+            firstName: response.user.firstName,
+            lastName: response.user.lastName,
+            role: response.user.role === 'organizer' ? 'Organizer' : 'Admin',
+            isEmailVerified: response.user.isEmailVerified,
+            createdAt: new Date()
+          };
+
           return {
             success: true,
-            message: response.message || 'Compte créé avec succès. Vérifiez votre email pour activer votre compte.'
+            message: response.message || 'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
+            user: user // 🎯 Return the user object so invitation acceptance can use the ID
           };
         } else {
           return {
@@ -384,32 +396,74 @@ export class AuthService {
     ];
   }
 
-  // Méthodes privées
+  /**
+   * Force real backend authentication for organizer testing
+   */
+  loginToRealBackend(): Observable<AuthResponse> {
+    console.log('🔑 Attempting real backend login...');
+    
+    // Try with the backend organizer credentials
+    const organizerLogin: LoginRequest = {
+      email: 'organizer@eventphoto.com',
+      password: 'OrganizerTest2024!',
+      rememberMe: true
+    };
 
-  private validateRegisterRequest(request: RegisterRequest): boolean {
-    if (!request.email || !request.password || !request.firstName || !request.lastName) {
-      return false;
-    }
+    return this.authDataService.login({
+      email: organizerLogin.email,
+      password: organizerLogin.password
+    }).pipe(
+      tap(response => {
+        console.log('🔍 Real backend response:', response);
+        if (response.success && response.token) {
+          console.log('✅ Successfully authenticated with real backend');
+          console.log('🎫 Real JWT token received:', response.token.substring(0, 30) + '...');
+        } else {
+          console.log('❌ Backend authentication failed:', response.message);
+        }
+      }),
+      map(response => {
+        if (response.success && response.user && response.token) {
+          const user: User = {
+            id: response.user.id,
+            email: response.user.email,
+            firstName: response.user.firstName,
+            lastName: response.user.lastName,
+            role: response.user.role === 'organizer' ? 'Organizer' : 'Admin',
+            isEmailVerified: response.user.isEmailVerified,
+            createdAt: new Date(),
+            lastLoginAt: new Date()
+          };
 
-    if (request.password !== request.confirmPassword) {
-      return false;
-    }
+          this.setCurrentUser(user, response.token, true);
+          if (response.refreshToken) {
+            localStorage.setItem('refresh_token', response.refreshToken);
+          }
 
-    if (request.password.length < 8) {
-      return false;
-    }
-
-    if (!request.agreeToTerms) {
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(request.email)) {
-      return false;
-    }
-
-    return true;
+          return {
+            success: true,
+            message: 'Connexion réussie',
+            user: user,
+            token: response.token
+          };
+        } else {
+          return {
+            success: false,
+            message: response.message || 'Erreur de connexion'
+          };
+        }
+      }),
+      catchError((error) => {
+        console.error('🚨 Real backend login error:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Erreur de connexion au serveur. Veuillez réessayer.'
+        });
+      })
+    );
   }
+
+  // Missing private methods - adding them back
 
   private checkStoredAuth(): void {
     const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
@@ -434,6 +488,31 @@ export class AuthService {
     
     this.currentUserSubject.next(user);
     this.isAuthenticatedSubject.next(true);
+  }
+
+  private validateRegisterRequest(request: RegisterRequest): boolean {
+    if (!request.email || !request.password || !request.firstName || !request.lastName) {
+      return false;
+    }
+
+    if (request.password !== request.confirmPassword) {
+      return false;
+    }
+
+    if (request.password.length < 8) {
+      return false;
+    }
+
+    if (!request.agreeToTerms) {
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(request.email)) {
+      return false;
+    }
+
+    return true;
   }
 
   private generateUserId(): string {
@@ -477,9 +556,6 @@ export class AuthService {
     console.log(`Email de vérification envoyé à ${user.email}`);
   }
 
-  /**
-   * Démarrer le monitoring de session pour l'US-002
-   */
   private startSessionMonitoring(): void {
     // Vérifier la session toutes les 30 minutes
     setInterval(() => {
@@ -487,9 +563,6 @@ export class AuthService {
     }, 30 * 60 * 1000); // 30 minutes
   }
 
-  /**
-   * Vérifier la validité de la session actuelle
-   */
   private checkSessionValidity(): void {
     if (!this.isAuthenticated()) {
       return;
@@ -513,17 +586,11 @@ export class AuthService {
     }
   }
 
-  /**
-   * Notifier que la session expire bientôt
-   */
   private notifySessionExpiringSoon(): void {
     // Cette méthode sera appelée par le service de notification
     console.log('Session expiring soon - notification should be sent');
   }
 
-  /**
-   * Expirer la session automatiquement
-   */
   private expireSession(): void {
     this.logout();
     console.log('Session expired automatically after 24h');

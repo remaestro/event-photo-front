@@ -216,14 +216,52 @@
             <h2 class="text-xl font-bold text-gray-900">Bénéficiaires</h2>
             <p class="text-sm text-gray-600 mt-1">Partagez vos revenus avec d'autres personnes</p>
           </div>
-          <button type="button" 
-                  (click)="addBeneficiary()"
-                  class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Ajouter un bénéficiaire
-          </button>
+        </div>
+
+        <!-- Add Beneficiary Form -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+          <h3 class="font-medium text-gray-900 mb-4">Ajouter un bénéficiaire</h3>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <input 
+                type="email" 
+                [(ngModel)]="newBeneficiaryEmail"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="email@exemple.com"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pourcentage (%) *</label>
+              <input 
+                type="number" 
+                [(ngModel)]="newBeneficiaryPercentage"
+                [ngModelOptions]="{standalone: true}"
+                min="1"
+                max="90"
+                placeholder="10"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Restant disponible</label>
+              <div class="text-sm text-gray-600 py-2">{{ getRemainingPercentage() }}%</div>
+            </div>
+            <div>
+              <button type="button" 
+                      (click)="addBeneficiary()"
+                      [disabled]="!newBeneficiaryEmail || newBeneficiaryPercentage <= 0 || getTotalBeneficiaryPercentage() + newBeneficiaryPercentage > 100"
+                      class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Ajouter
+              </button>
+            </div>
+          </div>
+          <div *ngIf="newBeneficiaryPercentage > 0 && getTotalBeneficiaryPercentage() + newBeneficiaryPercentage > 100" 
+               class="mt-2 text-sm text-red-600">
+            ⚠️ Ce pourcentage dépasserait le total autorisé ({{ getTotalBeneficiaryPercentage() + newBeneficiaryPercentage }}% > 100%)
+          </div>
         </div>
 
         <!-- Beneficiaries List -->
@@ -304,6 +342,16 @@
                 class="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
           Annuler
         </button>
+
+        <!-- Debug info -->
+        <div class="text-sm text-gray-600">
+          <p>Formulaire valide: {{ eventForm.valid ? 'Oui' : 'Non' }}</p>
+          <button type="button" 
+                  (click)="debugFormValidation()"
+                  class="text-blue-600 hover:text-blue-800 underline">
+            Debug formulaire
+          </button>
+        </div>
 
         <div class="flex space-x-4">
           <button type="button" 

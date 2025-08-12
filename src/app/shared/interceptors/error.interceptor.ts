@@ -2,12 +2,9 @@ import { inject } from '@angular/core';
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { NotificationService } from '../services/notification.service';
 import { environment } from '../../../environments/environment';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const notificationService = inject(NotificationService);
-
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'Une erreur inattendue s\'est produite';
@@ -74,10 +71,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         });
       }
 
-      // Show notification to user (except for 401 errors which are handled by auth interceptor)
-      if (error.status !== 401) {
-        notificationService.error(errorTitle, errorMessage);
-      }
+      // Instead of using NotificationService here (which causes circular dependency),
+      // we'll let individual components handle error notifications
+      // Components can catch errors and show notifications themselves
 
       return throwError(() => error);
     })

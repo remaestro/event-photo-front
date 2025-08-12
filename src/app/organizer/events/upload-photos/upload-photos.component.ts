@@ -110,23 +110,29 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
   }
 
   private loadEvent(): void {
-    // Load from organizer events in localStorage
-    const organizerEvents = JSON.parse(localStorage.getItem('organizer_events') || '[]');
-    this.event = organizerEvents.find((e: any) => e.id === this.eventId);
-    
-    if (!this.event) {
-      // Fallback to general events storage
-      const events = JSON.parse(localStorage.getItem('events') || '[]');
-      this.event = events.find((e: any) => e.id === this.eventId);
+    // Load event from API instead of localStorage
+    this.http.get<any>(`${environment.apiUrl}/api/events/${this.eventId}`, {
+      headers: this.getAuthHeaders()
+    }).subscribe({
+      next: (event) => {
+        this.event = event;
+        console.log('Event loaded successfully:', this.event);
+      },
+      error: (error) => {
+        console.error('Error loading event:', error);
+        alert('Événement non trouvé. Redirection vers la liste des événements.');
+        this.router.navigate(['/organizer/events']);
+      }
+    });
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
     }
-    
-    if (!this.event) {
-      console.error('Event not found for ID:', this.eventId);
-      alert('Événement non trouvé. Redirection vers la liste des événements.');
-      this.router.navigate(['/organizer/events']);
-    } else {
-      console.log('Event loaded successfully:', this.event);
-    }
+    return headers;
   }
 
   private setupDragAndDrop(): void {
@@ -457,7 +463,7 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
       
       if (failCount === 0) {
         alert(`Upload terminé avec succès ! ${successCount} photos uploadées.`);
-        this.router.navigate(['/organizer/events', this.eventId]);
+        this.router.navigate(['/organizer/photos'], { queryParams: { eventId: this.eventId } });
       } else {
         alert(`Upload terminé avec ${failCount} erreurs. ${successCount} photos uploadées avec succès.`);
       }

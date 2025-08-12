@@ -18,6 +18,14 @@
             {{ event.name }} - {{ formatDate(event.date) }}
           </p>
         </div>
+        <button 
+          (click)="navigateToUpload()"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Ajouter des photos
+        </button>
       </div>
     </div>
 
@@ -30,7 +38,7 @@
     <div *ngIf="!isLoading">
       <!-- Upload Stats -->
       <div class="bg-white rounded-lg shadow mb-8 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Statistiques d'Upload</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Statistiques</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="text-center">
             <div class="text-3xl font-bold text-blue-600">{{ uploadStats.total }}</div>
@@ -47,39 +55,6 @@
           <div class="text-center">
             <div class="text-3xl font-bold text-purple-600">{{ formatFileSize(uploadStats.totalSize) }}</div>
             <div class="text-sm text-gray-500">Taille totale</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Upload Zone -->
-      <div 
-        class="bg-white rounded-lg shadow mb-8 p-8 border-2 border-dashed transition-colors"
-        [ngClass]="{'border-blue-400 bg-blue-50': isDragOver, 'border-gray-300': !isDragOver}"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)">
-        <div class="text-center">
-          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="mt-4">
-            <label for="file-upload" class="cursor-pointer">
-              <span class="mt-2 block text-sm font-medium text-gray-900">
-                Glissez-déposez vos photos ici, ou 
-                <span class="text-blue-600 hover:text-blue-500">parcourez</span>
-              </span>
-              <input 
-                id="file-upload" 
-                name="file-upload" 
-                type="file" 
-                class="sr-only" 
-                multiple 
-                accept="image/*"
-                (change)="onFileSelect($event)">
-            </label>
-            <p class="mt-2 text-xs text-gray-500">
-              PNG, JPG, HEIC jusqu'à 10MB chacune
-            </p>
           </div>
         </div>
       </div>
@@ -188,11 +163,9 @@
                   <svg class="mx-auto h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  <button
-                    (click)="retryUpload(photo.id)"
-                    class="mt-2 text-xs text-red-600 hover:text-red-800 font-medium">
-                    Réessayer
-                  </button>
+                  <p class="mt-2 text-xs text-red-600 font-medium">
+                    Échec de l'upload
+                  </p>
                 </div>
               </div>
             </div>
@@ -221,6 +194,7 @@
             <div class="mt-2 flex justify-between items-center">
               <div class="flex space-x-1">
                 <button *ngIf="photo.status === 'completed'"
+                        (click)="viewPhoto(photo)"
                         class="text-blue-600 hover:text-blue-800 text-xs font-medium">
                   Voir
                 </button>
@@ -244,6 +218,82 @@
           </svg>
           <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune photo</h3>
           <p class="mt-1 text-sm text-gray-500">Commencez par uploader des photos pour votre événement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour afficher la photo avec watermark -->
+<div *ngIf="showPhotoModal && selectedPhotoForView" 
+     class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+     (click)="closePhotoModal()">
+  <div class="bg-white rounded-lg max-w-4xl max-h-full m-4 overflow-hidden"
+       (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="p-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-medium text-gray-900">{{ selectedPhotoForView.originalName }}</h3>
+          <p class="text-sm text-gray-600">{{ formatFileSize(selectedPhotoForView.size) }} • {{ formatDate(selectedPhotoForView.uploadDate) }}</p>
+        </div>
+        <button (click)="closePhotoModal()" 
+                class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Photo avec watermark -->
+    <div class="relative bg-gray-100">
+      <img [src]="getPhotoUrl(selectedPhotoForView.id, 'watermarked')" 
+           [alt]="selectedPhotoForView.originalName"
+           (error)="onImageError($event)"
+           class="w-full h-auto max-h-96 object-contain">
+      
+      <!-- Indication du watermark -->
+      <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+        📷 Version avec watermark
+      </div>
+    </div>
+    
+    <!-- Photo Info -->
+    <div class="p-4 bg-gray-50">
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span class="font-medium text-gray-700">Dimensions:</span>
+          <span class="ml-2 text-gray-600">{{ selectedPhotoForView.metadata.width }}×{{ selectedPhotoForView.metadata.height }}px</span>
+        </div>
+        <div *ngIf="selectedPhotoForView.metadata.camera">
+          <span class="font-medium text-gray-700">Appareil:</span>
+          <span class="ml-2 text-gray-600">{{ selectedPhotoForView.metadata.camera }}</span>
+        </div>
+      </div>
+      
+      <!-- Tags -->
+      <div *ngIf="selectedPhotoForView.tags.length > 0" class="mt-3">
+        <span class="font-medium text-gray-700">Tags:</span>
+        <div class="flex flex-wrap gap-1 mt-1">
+          <span *ngFor="let tag of selectedPhotoForView.tags" 
+                class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+            {{ tag }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Note sur le watermark -->
+      <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+        <div class="flex items-start">
+          <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-blue-800">
+            <p class="font-medium mb-1">Photo avec watermark "Event Photo"</p>
+            <p class="text-sm">Cette version contient le watermark automatiquement appliqué lors de l'upload. Les clients verront cette version avant l'achat.</p>
+          </div>
         </div>
       </div>
     </div>

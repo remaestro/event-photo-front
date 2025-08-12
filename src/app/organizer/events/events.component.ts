@@ -67,7 +67,8 @@ export class EventsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.eventService.getAllEvents()
+    // Récupérer seulement les événements de l'organisateur connecté
+    this.eventService.getMyEvents()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (events) => {
@@ -76,7 +77,7 @@ export class EventsComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error loading events:', error);
+          console.error('Error loading my events:', error);
           this.events = [];
           this.filteredEvents = [];
           this.isLoading = false;

@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService, RegisterRequest } from '../../shared/services/auth.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { InvitationService } from '../../shared/services/invitation.service';
 
 // Custom validator for password confirmation
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -29,25 +30,92 @@ export class RegisterComponent implements OnInit {
   selectedRole: 'organizer' | 'admin' | null = null;
   isLoading = false;
   registrationSuccess = false;
+  
+  // 🎯 Nouvelles propriétés pour les invitations
+  invitationToken: string | null = null;
+  eventId: string | null = null;
+  invitationInfo: any = null;
+  isInvitedUser = false;
+  isValidatingInvitation = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private invitationService: InvitationService
   ) {
     this.registerForm = this.createForm();
   }
 
   ngOnInit(): void {
-    // Check if role is pre-selected from query params (from role-selection page)
+    // 🎯 Détecter les paramètres d'invitation
     this.route.queryParams.subscribe(params => {
+      // Vérifier s'il y a un token d'invitation
+      if (params['invitation'] && params['eventId']) {
+        this.invitationToken = params['invitation'];
+        this.eventId = params['eventId'];
+        this.isInvitedUser = true;
+        this.validateInvitation();
+      }
+      
+      // Check if role is pre-selected from query params (from role-selection page)
       if (params['role'] && (params['role'] === 'organizer' || params['role'] === 'admin')) {
         this.selectedRole = params['role'];
         this.updateFormWithRole();
       }
     });
+  }
+
+  /**
+   * 🔍 Valider le token d'invitation
+   */
+  private validateInvitation(): void {
+    if (!this.invitationToken) return;
+    
+    this.isValidatingInvitation = true;
+    
+    this.invitationService.validateInvitationToken(this.invitationToken)
+      .subscribe({
+        next: (response) => {
+          this.isValidatingInvitation = false;
+          
+          if (response.valid) {
+            this.invitationInfo = response;
+            // Force le rôle à 'organizer' pour les bénéficiaires invités
+            this.selectedRole = 'organizer';
+            this.updateFormWithRole();
+            
+            this.notificationService.success(
+              'Invitation valide',
+              `Vous êtes invité(e) à rejoindre l'événement "${response.eventName}"`
+            );
+          } else {
+            this.handleInvalidInvitation();
+          }
+        },
+        error: (error) => {
+          this.isValidatingInvitation = false;
+          console.error('Erreur validation invitation:', error);
+          this.handleInvalidInvitation();
+        }
+      });
+  }
+
+  /**
+   * ❌ Gérer les invitations invalides
+   */
+  private handleInvalidInvitation(): void {
+    this.notificationService.error(
+      'Invitation invalide',
+      'Ce lien d\'invitation est expiré ou invalide.'
+    );
+    
+    // Rediriger vers la page d'inscription normale après 3 secondes
+    setTimeout(() => {
+      this.router.navigate(['/register']);
+    }, 3000);
   }
 
   private createForm(): FormGroup {
@@ -103,19 +171,21 @@ export class RegisterComponent implements OnInit {
 
     this.authService.register(registerRequest).subscribe({
       next: (response) => {
-        this.isLoading = false;
-        
         if (response.success) {
           this.registrationSuccess = true;
-          this.notificationService.success(
-            'Inscription réussie',
-            'Votre compte a été créé. Vérifiez votre email pour l\'activer.'
-          );
+          
+          // 🎯 Si c'est un utilisateur invité, accepter automatiquement l'invitation
+          if (this.isInvitedUser && this.invitationToken && response.user?.id) {
+            this.acceptInvitation(response.user.id);
+          } else {
+            this.handleNormalRegistration();
+          }
           
           // Track the registration for analytics
           this.trackRegistration(this.selectedRole!);
           
         } else {
+          this.isLoading = false;
           this.notificationService.error(
             'Erreur d\'inscription',
             response.message
@@ -133,8 +203,59 @@ export class RegisterComponent implements OnInit {
     });
   }
 
-  goToLogin(): void {
-    this.router.navigate(['/login']);
+  /**
+   * ✅ Accepter automatiquement l'invitation après inscription
+   */
+  private acceptInvitation(userId: string): void {
+    if (!this.invitationToken || !userId) {
+      this.handleNormalRegistration();
+      return;
+    }
+
+    this.invitationService.acceptInvitation(this.invitationToken, userId)
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          
+          this.notificationService.success(
+            'Inscription et invitation acceptées !',
+            `Vous êtes maintenant bénéficiaire de l'événement "${this.invitationInfo?.eventName}"`
+          );
+          
+          // Rediriger vers le dashboard organizer après acceptation
+          setTimeout(() => {
+            this.router.navigate(['/organizer/dashboard']);
+          }, 2000);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Erreur acceptation invitation:', error);
+          
+          this.notificationService.warning(
+            'Inscription réussie',
+            'Votre compte a été créé mais l\'invitation n\'a pas pu être acceptée automatiquement. Contactez l\'organisateur.'
+          );
+          
+          this.handleNormalRegistration();
+        }
+      });
+  }
+
+  /**
+   * 📝 Gérer l'inscription normale (sans invitation)
+   */
+  private handleNormalRegistration(): void {
+    this.isLoading = false;
+    
+    this.notificationService.success(
+      'Inscription réussie',
+      'Votre compte a été créé. Vérifiez votre email pour l\'activer.'
+    );
+    
+    // Redirection normale
+    setTimeout(() => {
+      this.goToLogin();
+    }, 2000);
   }
 
   // Helper method to mark all form fields as touched for validation display
@@ -169,5 +290,30 @@ export class RegisterComponent implements OnInit {
 
   getRoleIcon(): string {
     return this.selectedRole === 'organizer' ? '📸' : '🛡️';
+  }
+
+  // 🎯 Nouvelles méthodes d'aide pour l'UI
+  getInvitationDisplayText(): string {
+    if (!this.invitationInfo) return '';
+    
+    return `Vous êtes invité(e) à rejoindre l'événement "${this.invitationInfo.eventName}" 
+            organisé par ${this.invitationInfo.organizerName}`;
+  }
+
+  isInvitationExpiringSoon(): boolean {
+    if (!this.invitationInfo?.expiresAt) return false;
+    
+    const expirationDate = new Date(this.invitationInfo.expiresAt);
+    const now = new Date();
+    const hoursUntilExpiration = (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    return hoursUntilExpiration <= 24; // Expire dans moins de 24h
+  }
+
+  /**
+   * 🔄 Rediriger vers la page de connexion
+   */
+  goToLogin() {
+    this.router.navigate(['/login']);
   }
 }

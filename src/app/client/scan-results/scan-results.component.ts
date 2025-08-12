@@ -3,8 +3,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { CartService } from '../../shared/services/cart.service';
 import { ImageUrlService } from '../../shared/services/image-url.service';
+import { environment } from '../../../environments/environment';
 
 interface Photo {
   id: string;
@@ -41,26 +43,38 @@ export interface CartItem {
 export class ScanResultsComponent implements OnInit {
   sessionId: string | null = null;
   eventId: string | null = null;
+  eventCode: string | null = null;
   foundPhotos: Photo[] = [];
   allSelected = false;
   sortBy: 'confidence' | 'date' | 'price' = 'confidence';
   isLoading = false;
   previewPhoto: Photo | null = null;
   showPreviewModal = false;
+  eventData: any = null;
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private location: Location,
     private cartService: CartService,
-    public imageUrlService: ImageUrlService
+    public imageUrlService: ImageUrlService,
+    private http: HttpClient
   ) {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId');
-    this.eventId = this.route.snapshot.paramMap.get('eventId');
+    this.eventId = this.route.snapshot.queryParams['eventId'];
+    this.eventCode = this.route.snapshot.queryParams['eventCode'] || this.route.snapshot.paramMap.get('eventCode');
   }
 
   ngOnInit() {
-    this.loadScanResults();
+    // Si on a un code d'événement, charger les photos
+    if (this.eventCode) {
+      this.loadEventPhotos();
+    } else if (this.eventId) {
+      this.loadEventPhotosById();
+    } else {
+      // Fallback vers les données mockées si aucun code/ID n'est fourni
+      this.loadScanResults();
+    }
   }
 
   private async loadScanResults() {
@@ -259,5 +273,100 @@ export class ScanResultsComponent implements OnInit {
 
   trackByPhotoId(index: number, photo: Photo): string {
     return photo.id;
+  }
+
+  private async loadEventPhotos() {
+    this.isLoading = true;
+    try {
+      // D'abord récupérer les infos de l'événement par son code
+      const eventResponse = await this.http.get<any>(`${environment.apiUrl}/api/events/public/${this.eventCode}`).toPromise();
+      this.eventData = eventResponse;
+      this.eventId = eventResponse.id;
+
+      // Puis charger les photos de l'événement
+      const photosResponse = await this.http.get<any>(`${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`).toPromise();
+      
+      this.foundPhotos = photosResponse.photos.map((photo: any) => ({
+        id: photo.id,
+        imageUrl: this.imageUrlService.getWatermarkedUrl(photo.id),
+        thumbnail: this.imageUrlService.getThumbnailUrl(photo.id),
+        timestamp: this.formatDate(photo.uploadDate),
+        size: `${photo.dimensions?.width || 0}x${photo.dimensions?.height || 0}`,
+        price: this.calculatePhotoPrice(photo),
+        confidence: 95, // Pas de scan facial, donc on met une confiance élevée
+        selected: false,
+        eventId: this.eventId,
+        metadata: {
+          location: photo.metadata?.location || 'Non spécifié',
+          photographer: this.eventData.organizerName,
+          tags: photo.tags || []
+        }
+      }));
+
+      this.sortPhotos();
+    } catch (error) {
+      console.error('Error loading event photos:', error);
+      // En cas d'erreur, fallback vers les données mockées
+      await this.loadScanResults();
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async loadEventPhotosById() {
+    this.isLoading = true;
+    try {
+      // Charger directement par ID d'événement
+      const photosResponse = await this.http.get<any>(`${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`).toPromise();
+      
+      this.foundPhotos = photosResponse.photos.map((photo: any) => ({
+        id: photo.id,
+        imageUrl: this.imageUrlService.getWatermarkedUrl(photo.id),
+        thumbnail: this.imageUrlService.getThumbnailUrl(photo.id),
+        timestamp: this.formatDate(photo.uploadDate),
+        size: `${photo.dimensions?.width || 0}x${photo.dimensions?.height || 0}`,
+        price: this.calculatePhotoPrice(photo),
+        confidence: 95,
+        selected: false,
+        eventId: this.eventId,
+        metadata: {
+          location: photo.metadata?.location || 'Non spécifié',
+          photographer: 'Photographe',
+          tags: photo.tags || []
+        }
+      }));
+
+      this.sortPhotos();
+    } catch (error) {
+      console.error('Error loading event photos by ID:', error);
+      await this.loadScanResults();
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private calculatePhotoPrice(photo: any): number {
+    // Logique de pricing basée sur la qualité/taille de la photo
+    const fileSize = photo.fileSize || 0;
+    const dimensions = photo.dimensions;
+    
+    if (dimensions && dimensions.width * dimensions.height > 8000000) { // 8MP+
+      return 8.99;
+    } else if (fileSize > 5000000) { // 5MB+
+      return 6.99;
+    } else {
+      return 4.99;
+    }
+  }
+
+  private formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }

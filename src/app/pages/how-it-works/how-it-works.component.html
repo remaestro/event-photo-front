@@ -1,1 +1,268 @@
-<p>how-it-works works!</p>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <!-- Hero Section -->
+  <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div class="text-center">
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-6">
+          Comment ça marche ?
+        </h1>
+        <p class="text-xl text-indigo-100 mb-8 max-w-3xl mx-auto">
+          Découvrez comment EventPhoto révolutionne la vente de photos d'événements avec un système d'accès par code et le partage automatique des revenus
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button 
+            (click)="scrollToSection('steps')"
+            class="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-indigo-50 transition-colors">
+            🚀 Découvrir le processus
+          </button>
+          <a routerLink="/register" 
+             class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-indigo-600 transition-colors">
+            📝 Commencer maintenant
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Decorative elements -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden">
+      <div class="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full"></div>
+      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-white opacity-10 rounded-full"></div>
+    </div>
+  </div>
+
+  <!-- Navigation Sections -->
+  <div class="bg-white shadow-sm sticky top-16 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="flex space-x-8 py-4 overflow-x-auto">
+        <button (click)="scrollToSection('steps')" 
+                class="whitespace-nowrap text-gray-600 hover:text-indigo-600 font-medium transition-colors">
+          🔄 Processus
+        </button>
+        <button (click)="scrollToSection('features')" 
+                class="whitespace-nowrap text-gray-600 hover:text-indigo-600 font-medium transition-colors">
+          ⭐ Fonctionnalités
+        </button>
+        <button (click)="scrollToSection('users')" 
+                class="whitespace-nowrap text-gray-600 hover:text-indigo-600 font-medium transition-colors">
+          👥 Utilisateurs
+        </button>
+        <button (click)="scrollToSection('demo')" 
+                class="whitespace-nowrap text-gray-600 hover:text-indigo-600 font-medium transition-colors">
+          🎬 Démonstration
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Steps Section -->
+  <section id="steps" class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          🔄 Le processus en 4 étapes simples
+        </h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          De la création d'événement au partage des revenus, découvrez notre processus optimisé
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div *ngFor="let step of steps" class="relative">
+          <!-- Step Card -->
+          <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 text-center transform hover:-translate-y-2">
+            <!-- Step Number -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+              {{ step.id }}
+            </div>
+            
+            <!-- Icon -->
+            <div class="text-6xl mb-6 mt-4">{{ step.icon }}</div>
+            
+            <!-- Content -->
+            <h3 class="text-xl font-bold text-gray-900 mb-4">{{ step.title }}</h3>
+            <p class="text-gray-600 mb-6">{{ step.description }}</p>
+            
+            <!-- Details -->
+            <div class="text-left">
+              <ul class="space-y-2">
+                <li *ngFor="let detail of step.details" class="flex items-start">
+                  <span class="text-green-500 mr-2 mt-0.5">✓</span>
+                  <span class="text-sm text-gray-700">{{ detail }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Connector Arrow (not on last step) -->
+          <div *ngIf="step.id < steps.length" 
+               class="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+            <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          ⭐ Fonctionnalités avancées
+        </h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          Des technologies de pointe pour une expérience utilisateur exceptionnelle
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div *ngFor="let feature of features" 
+             class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6">
+          <div class="text-4xl mb-4">{{ feature.icon }}</div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">{{ feature.title }}</h3>
+          <p class="text-gray-600">{{ feature.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- User Types Section -->
+  <section id="users" class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          👥 Pour tous les types d'utilisateurs
+        </h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          EventPhoto s'adapte aux besoins de chaque utilisateur de l'écosystème photo
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div *ngFor="let userType of userTypes" 
+             class="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-8 border-2 border-transparent hover:border-indigo-200 transition-all duration-300">
+          <div class="text-center mb-6">
+            <div class="text-5xl mb-4">{{ userType.icon }}</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ userType.type }}</h3>
+            <p class="text-gray-600">{{ userType.description }}</p>
+          </div>
+          
+          <div class="space-y-3">
+            <h4 class="font-semibold text-gray-900 mb-3">Avantages :</h4>
+            <ul class="space-y-2">
+              <li *ngFor="let benefit of userType.benefits" class="flex items-start">
+                <span class="text-indigo-500 mr-2 mt-0.5">✓</span>
+                <span class="text-gray-700">{{ benefit }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Section -->
+  <section id="demo" class="py-16 bg-gradient-to-r from-indigo-600 to-purple-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+        🎬 Voir EventPhoto en action
+      </h2>
+      <p class="text-xl text-indigo-100 mb-8 max-w-3xl mx-auto">
+        Découvrez la puissance de notre plateforme avec une démonstration interactive
+      </p>
+      
+      <!-- Demo Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div class="bg-black bg-opacity-25 backdrop-blur-md rounded-xl p-6 text-white border border-white border-opacity-30 hover:bg-opacity-35 transition-all duration-300 shadow-lg">
+          <div class="text-3xl mb-4">🔑</div>
+          <h3 class="text-lg font-bold mb-2 text-white">Accès par Code</h3>
+          <p class="text-gray-100 text-sm font-medium">Testez notre système d'accès par code d'événement simple et rapide</p>
+        </div>
+        
+        <div class="bg-black bg-opacity-25 backdrop-blur-md rounded-xl p-6 text-white border border-white border-opacity-30 hover:bg-opacity-35 transition-all duration-300 shadow-lg">
+          <div class="text-3xl mb-4">💰</div>
+          <h3 class="text-lg font-bold mb-2 text-white">Calcul de Revenus</h3>
+          <p class="text-gray-100 text-sm font-medium">Simulez la répartition automatique des bénéfices</p>
+        </div>
+        
+        <div class="bg-black bg-opacity-25 backdrop-blur-md rounded-xl p-6 text-white border border-white border-opacity-30 hover:bg-opacity-35 transition-all duration-300 shadow-lg">
+          <div class="text-3xl mb-4">📊</div>
+          <h3 class="text-lg font-bold mb-2 text-white">Dashboard Live</h3>
+          <p class="text-gray-100 text-sm font-medium">Explorez notre interface de gestion d'événements</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a routerLink="/event-access" 
+           class="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-indigo-50 transition-colors">
+          🔍 Tester la recherche d'événement
+        </a>
+        <a routerLink="/register" 
+           class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-indigo-600 transition-colors">
+          🚀 Créer mon compte
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="py-16 bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          ❓ Questions fréquentes
+        </h2>
+        <p class="text-xl text-gray-600">
+          Tout ce que vous devez savoir sur EventPhoto
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Comment accéder aux photos d'un événement ?</h3>
+          <p class="text-gray-600">Chaque événement dispose d'un code unique. Il suffit d'entrer ce code sur notre plateforme ou de scanner le QR code fourni par l'organisateur pour accéder à toutes les photos de l'événement.</p>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Comment sont partagés les revenus ?</h3>
+          <p class="text-gray-600">Lors de la création d'un événement, vous définissez le pourcentage de chaque bénéficiaire. Les revenus sont automatiquement répartis selon ces pourcentages à chaque vente.</p>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Les photos sont-elles sécurisées ?</h3>
+          <p class="text-gray-600">Absolument ! Toutes les photos sont stockées de manière sécurisée et seules les personnes disposant du code d'événement peuvent y accéder. Chaque événement est protégé par son code unique.</p>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Combien coûte EventPhoto ?</h3>
+          <p class="text-gray-600">EventPhoto prend une commission sur chaque vente réalisée. Pas de coûts fixes, vous ne payez que quand vous vendez !</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Final -->
+  <section class="py-16 bg-gradient-to-r from-green-500 to-blue-600">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+        Prêt à révolutionner vos événements photo ?
+      </h2>
+      <p class="text-xl text-green-100 mb-8">
+        Rejoignez des milliers d'organisateurs qui font confiance à EventPhoto
+      </p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a routerLink="/register" 
+           class="bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-green-50 transition-colors">
+          🚀 Commencer gratuitement
+        </a>
+        <a routerLink="/support" 
+           class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-green-600 transition-colors">
+          💬 Nous contacter
+        </a>
+      </div>
+    </div>
+  </section>
+</div>

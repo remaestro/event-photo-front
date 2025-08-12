@@ -45,4 +45,45 @@ export class HomeComponent {
   get currentUser() {
     return this.authService.getCurrentUser();
   }
+
+  /**
+   * 🔧 DEBUG: Force real backend authentication
+   */
+  async debugBackendAuth() {
+    console.log('🔧 DEBUG: Forcing real backend authentication...');
+    
+    try {
+      // First, clear any existing mock auth
+      this.authService.forceLogout();
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Try to authenticate with real backend
+      this.authService.loginToRealBackend().subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('✅ Real backend authentication successful!');
+            console.log('🎫 Token type:', this.authService.getCurrentToken()?.startsWith('token_') ? 'MOCK' : 'REAL JWT');
+            
+            // Show success message
+            alert('✅ Authentification backend réussie! Vous pouvez maintenant créer des événements.');
+            
+            // Refresh the page to update the UI
+            window.location.reload();
+          } else {
+            console.log('❌ Backend authentication failed:', response.message);
+            alert('❌ Échec de l\'authentification backend: ' + response.message);
+          }
+        },
+        error: (error) => {
+          console.error('🚨 Authentication error:', error);
+          alert('🚨 Erreur d\'authentification. Vérifiez que le backend est démarré.');
+        }
+      });
+    } catch (error) {
+      console.error('🚨 Debug auth error:', error);
+      alert('🚨 Erreur lors de l\'authentification debug.');
+    }
+  }
 }

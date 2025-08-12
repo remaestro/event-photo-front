@@ -1,0 +1,44 @@
+/* Styles personnalisés pour le composant Mes Photos */
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Animation au survol des photos */
+.group:hover .group-hover\:scale-105 {
+  transform: scale(1.05);
+}
+
+/* Styles pour les overlays */
+.group:hover .group-hover\:bg-opacity-50 {
+  background-opacity: 0.5;
+}
+
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Responsive pour la grille de photos */
+@media (max-width: 640px) {
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .sm\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1025px) {
+  .lg\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

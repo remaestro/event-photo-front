@@ -13,9 +13,15 @@
       
       <div class="flex justify-between items-center">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Gestion des Bénéficiaires</h1>
+          <h1 class="text-3xl font-bold text-gray-900">
+            <span *ngIf="event">Bénéficiaires de {{ event.name }}</span>
+            <span *ngIf="!event">Tous mes bénéficiaires</span>
+          </h1>
           <p class="mt-2 text-gray-600" *ngIf="event">
             {{ event.name }} - {{ formatDate(event.date) }}
+          </p>
+          <p class="mt-2 text-gray-600" *ngIf="!event">
+            Vue d'ensemble de tous vos bénéficiaires
           </p>
         </div>
         <button
@@ -142,19 +148,33 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                  <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center relative">
                     <span class="text-sm font-medium text-gray-700">
                       {{ beneficiary.name.charAt(0).toUpperCase() }}
                     </span>
+                    <!-- Icône de statut en badge -->
+                    <div class="absolute -bottom-1 -right-1 text-lg">
+                      {{ getStatusIcon(beneficiary.status) }}
+                    </div>
                   </div>
                 </div>
                 <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900">{{ beneficiary.name }}</div>
+                  <div class="flex items-center">
+                    <div class="text-sm font-medium text-gray-900">{{ beneficiary.name }}</div>
+                    <span *ngIf="isInvitationRecent(beneficiary.invitedDate)" 
+                          class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                      🆕 Nouveau
+                    </span>
+                  </div>
                   <div class="text-sm text-gray-500">{{ beneficiary.email }}</div>
                   <div class="text-sm text-gray-500">
-                    Invité le {{ formatDate(beneficiary.invitedDate) }}
+                    Invité {{ getInvitationAge(beneficiary.invitedDate) }}
                     <span *ngIf="beneficiary.respondedDate">
                       • Répondu le {{ formatDate(beneficiary.respondedDate) }}
+                    </span>
+                    <span *ngIf="!beneficiary.respondedDate && beneficiary.status === 'pending'"
+                          class="text-yellow-600 font-medium">
+                      • En attente de réponse
                     </span>
                   </div>
                 </div>
@@ -164,27 +184,110 @@
                 <div class="text-right">
                   <div class="text-sm font-medium text-gray-900">{{ beneficiary.percentage }}%</div>
                   <div class="text-sm text-gray-500">{{ formatCurrency(beneficiary.totalEarnings) }}</div>
+                  <div class="text-xs text-gray-400">
+                    Potentiel: {{ formatCurrency(calculateBeneficiaryShare(beneficiary)) }}
+                  </div>
                 </div>
                 
-                <span 
-                  class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                  [ngClass]="getStatusColor(beneficiary.status)">
-                  {{ getStatusText(beneficiary.status) }}
-                </span>
-                
+                <div class="flex flex-col items-end space-y-2">
+                  <span 
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full"
+                    [ngClass]="getStatusColor(beneficiary.status)">
+                    {{ getStatusIcon(beneficiary.status) }} {{ getStatusText(beneficiary.status) }}
+                  </span>
+                  
+                  <!-- Actions dynamiques selon le statut -->
+                  <div class="flex space-x-2">
+                    <!-- Bouton envoyer invitation (si to_be_sent) -->
+                    <button
+                      *ngIf="beneficiary.status === 'to_be_sent'"
+                      (click)="resendInvitationEmail(beneficiary.id)"
+                      class="inline-flex items-center px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                      title="Envoyer l'invitation">
+                      📤 Envoyer
+                    </button>
+                    
+                    <!-- Bouton renvoyer invitation (si pending ou declined) -->
+                    <button
+                      *ngIf="beneficiary.status === 'pending' || beneficiary.status === 'declined'"
+                      (click)="resendInvitationEmail(beneficiary.id)"
+                      class="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      title="Renvoyer l'invitation">
+                      📧 Renvoyer
+                    </button>
+                    
+                    <!-- Bouton actualiser statut -->
+                    <button
+                      (click)="refreshBeneficiaryStatus(beneficiary.id)"
+                      class="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                      title="Actualiser le statut">
+                      🔄
+                    </button>
+                    
+                    <!-- Bouton retirer -->
+                    <button
+                      (click)="removeBeneficiary(beneficiary.id)"
+                      class="inline-flex items-center px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                      title="Retirer ce bénéficiaire">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Détails étendus pour les invitations en attente -->
+            <div *ngIf="beneficiary.status === 'pending'" 
+                 class="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <svg class="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span class="text-sm text-yellow-800">
+                    Invitation envoyée il y a {{ getInvitationAge(beneficiary.invitedDate) }}
+                  </span>
+                </div>
                 <div class="flex space-x-2">
-                  <button
-                    *ngIf="beneficiary.status === 'pending'"
-                    (click)="resendInvitation(beneficiary.id)"
-                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    Renvoyer
-                  </button>
-                  <button
-                    (click)="removeBeneficiary(beneficiary.id)"
-                    class="text-red-600 hover:text-red-800 text-sm font-medium">
-                    Retirer
+                  <button 
+                    (click)="resendInvitationEmail(beneficiary.id)"
+                    class="text-xs text-yellow-700 hover:text-yellow-900 font-medium">
+                    📧 Renvoyer maintenant
                   </button>
                 </div>
+              </div>
+            </div>
+            
+            <!-- Confirmation pour les invitations acceptées -->
+            <div *ngIf="beneficiary.status === 'accepted'" 
+                 class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm text-green-800">
+                  ✅ Invitation acceptée le {{ formatDate(beneficiary.respondedDate!) }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- Information pour les invitations refusées -->
+            <div *ngIf="beneficiary.status === 'declined'" 
+                 class="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <svg class="w-4 h-4 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span class="text-sm text-red-800">
+                    ❌ Invitation refusée le {{ formatDate(beneficiary.respondedDate!) }}
+                  </span>
+                </div>
+                <button 
+                  (click)="resendInvitationEmail(beneficiary.id)"
+                  class="text-xs text-red-700 hover:text-red-900 font-medium">
+                  🔄 Renvoyer une nouvelle invitation
+                </button>
               </div>
             </div>
           </li>
@@ -195,16 +298,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
           </svg>
           <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun bénéficiaire</h3>
-          <p class="mt-1 text-sm text-gray-500">Commencez par ajouter des bénéficiaires à votre événement.</p>
+          <p class="mt-1 text-sm text-gray-500">
+            Les bénéficiaires sont ajoutés lors de la création d'événement via le système d'invitations.
+          </p>
           <div class="mt-6">
-            <button
-              (click)="toggleAddForm()"
-              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Ajouter un bénéficiaire
-            </button>
+            <p class="text-xs text-gray-400">
+              💡 Pour ajouter des bénéficiaires, créez un nouvel événement ou modifiez un événement existant.
+            </p>
           </div>
         </div>
       </div>
@@ -276,6 +376,57 @@
               <div class="w-20 text-sm text-gray-900 text-right">{{ formatCurrency(calculateBeneficiaryShare(beneficiary)) }}</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 🎯 Statistiques d'invitation -->
+      <div class="bg-white rounded-lg shadow mb-8 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">📊 Statut des Invitations</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
+            <div class="text-2xl font-bold text-gray-600">{{ getInvitationStats().total }}</div>
+            <div class="text-sm text-gray-600">Total invitations</div>
+          </div>
+          <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+            <div class="text-2xl font-bold text-green-600">{{ getInvitationStats().accepted }}</div>
+            <div class="text-sm text-gray-600">Acceptées</div>
+          </div>
+          <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg">
+            <div class="text-2xl font-bold text-yellow-600">{{ getInvitationStats().pending }}</div>
+            <div class="text-sm text-gray-600">En attente</div>
+          </div>
+          <div class="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+            <div class="text-2xl font-bold text-red-600">{{ getInvitationStats().declined }}</div>
+            <div class="text-sm text-gray-600">Refusées</div>
+          </div>
+        </div>
+        
+        <!-- Taux d'acceptation -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-600">Taux d'acceptation</span>
+            <span class="text-sm font-bold text-gray-900">{{ getInvitationStats().acceptanceRate.toFixed(1) }}%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full transition-all duration-300"
+                 [style.width.%]="getInvitationStats().acceptanceRate">
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions groupées -->
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button 
+            (click)="sendAllPendingInvitations()"
+            [disabled]="getInvitationStats().pending === 0"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+            📧 Envoyer invitations en attente ({{ getInvitationStats().pending }})
+          </button>
+          <button 
+            (click)="loadEventAndBeneficiaries()"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm">
+            🔄 Actualiser les statuts
+          </button>
         </div>
       </div>
     </div>

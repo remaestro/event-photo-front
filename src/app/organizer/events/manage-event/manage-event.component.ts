@@ -214,9 +214,7 @@ export class ManageEventComponent implements OnInit, OnDestroy {
   }
 
   manageBeneficiaries(): void {
-    this.router.navigate(['/organizer/beneficiaries'], {
-      queryParams: { eventId: this.eventId }
-    });
+    this.router.navigate(['/organizer/events', this.eventId, 'beneficiaries']);
   }
 
   viewAllPhotos(): void {

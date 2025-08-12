@@ -315,64 +315,30 @@
       </div>
     </div>
 
-    <!-- Événements populaires -->
-    <div *ngIf="!hasSearched && popularEvents.length > 0">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Événements populaires</h2>
-        <div class="text-sm text-gray-500">Les plus consultés</div>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div
-          *ngFor="let event of popularEvents"
-          class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 group"
-          (click)="searchPopularEvent(event)"
-        >
-          <div [class]="'h-32 bg-gradient-to-r ' + event.gradient + ' relative'">
-            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
-              <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-semibold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{{ event.name }}</h3>
-            <div class="space-y-1 text-sm text-gray-600">
-              <p class="flex items-center">
-                <span class="mr-2">📅</span>
-                {{ formatDate(event.date) }}
-              </p>
-              <p class="flex items-center">
-                <span class="mr-2">📍</span>
-                {{ event.location }}
-              </p>
-              <p class="flex items-center">
-                <span class="mr-2">📸</span>
-                {{ event.photoCount }} photos
-              </p>
-            </div>
-            <div class="mt-3">
-              <div class="flex flex-wrap gap-1">
-                <span
-                  *ngFor="let tag of event.tags.slice(0, 2)"
-                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-                >
-                  {{ tag }}
-                </span>
-                <span *ngIf="event.tags.length > 2" class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                  +{{ event.tags.length - 2 }}
-                </span>
-              </div>
-            </div>
-          </div>
+    <!-- Message d'accueil quand aucune recherche n'a été effectuée -->
+    <div *ngIf="!hasSearched" class="text-center py-12">
+      <div class="text-6xl mb-4">🔍</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Recherchez vos événements</h2>
+      <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+        Utilisez les filtres ci-dessus pour trouver vos événements par nom, code, lieu, date ou catégorie.
+        Vous pouvez également scanner un QR code pour un accès direct.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="text-3xl mb-3">📅</div>
+          <h3 class="font-semibold mb-2">Par nom d'événement</h3>
+          <p class="text-sm text-gray-600">Recherchez par le nom de l'événement (mariage, anniversaire, etc.)</p>
         </div>
-      </div>
-
-      <div class="text-center mt-8">
-        <p class="text-gray-600 mb-4">Vous ne trouvez pas votre événement ?</p>
-        <p class="text-sm text-gray-500">
-          Utilisez les filtres ci-dessus pour rechercher par nom, code, lieu ou date
-        </p>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="text-3xl mb-3">🏷️</div>
+          <h3 class="font-semibold mb-2">Par code d'événement</h3>
+          <p class="text-sm text-gray-600">Utilisez le code fourni par l'organisateur</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="text-3xl mb-3">📱</div>
+          <h3 class="font-semibold mb-2">Scanner QR code</h3>
+          <p class="text-sm text-gray-600">Scannez le QR code de l'événement pour un accès direct</p>
+        </div>
       </div>
     </div>
 

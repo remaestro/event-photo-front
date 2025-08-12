@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavigationComponent } from './shared/components/navigation/navigation.component';
 import { NotificationComponent } from './shared/components/notification/notification.component';
-import { SessionStatusComponent } from './shared/components/session-status/session-status.component';
 import { AccessibilityPanelComponent } from './shared/components/accessibility-panel/accessibility-panel.component';
 
 @Component({
@@ -12,7 +11,6 @@ import { AccessibilityPanelComponent } from './shared/components/accessibility-p
     RouterOutlet, 
     NavigationComponent, 
     NotificationComponent, 
-    SessionStatusComponent,
     AccessibilityPanelComponent
   ],
   templateUrl: './app.component.html',

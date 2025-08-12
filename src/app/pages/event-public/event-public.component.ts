@@ -252,8 +252,8 @@ export class EventPublicComponent implements OnInit, OnDestroy {
   }
 
   // Retourner à la recherche
-  goBackToSearch() {
-    this.router.navigate(['/events-search']);
+  goToEventSearch() {
+    this.router.navigate(['/event-access']);
   }
 
   // Obtenir l'email de contact de l'organisateur

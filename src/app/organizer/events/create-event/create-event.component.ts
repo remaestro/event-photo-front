@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { EventsDataService, CreateEventRequest, Event } from '../../../shared/services/events-data.service';
 import { AuthService } from '../../../shared/services/auth.service';
+import { InvitationService, InvitationRequest } from '../../../shared/services/invitation.service';
 
 export interface Beneficiary {
   email: string;
@@ -50,7 +51,8 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private eventsDataService: EventsDataService,
-    private authService: AuthService
+    private authService: AuthService,
+    private invitationService: InvitationService
   ) {
     this.initializeForm();
   }
@@ -132,6 +134,49 @@ export class CreateEventComponent implements OnInit, OnDestroy {
   isFieldInvalid(fieldName: string): boolean {
     const field = this.eventForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Debug method to check form validity
+  debugFormValidation(): void {
+    console.log('=== FORM VALIDATION DEBUG ===');
+    console.log('Form valid:', this.eventForm.valid);
+    console.log('Form value:', this.eventForm.value);
+    
+    Object.keys(this.eventForm.controls).forEach(key => {
+      const control = this.eventForm.get(key);
+      if (control) {
+        console.log(`${key}:`, {
+          valid: control.valid,
+          value: control.value,
+          errors: control.errors
+        });
+        
+        // Check FormArray controls (like beneficiaries)
+        if (control instanceof FormArray) {
+          control.controls.forEach((subControl, index) => {
+            if (subControl instanceof FormGroup) {
+              console.log(`  ${key}[${index}]:`, {
+                valid: subControl.valid,
+                value: subControl.value,
+                errors: subControl.errors
+              });
+              
+              Object.keys(subControl.controls).forEach(subKey => {
+                const subField = subControl.get(subKey);
+                if (subField && !subField.valid) {
+                  console.log(`    ${key}[${index}].${subKey}:`, {
+                    valid: subField.valid,
+                    value: subField.value,
+                    errors: subField.errors
+                  });
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+    console.log('=== END DEBUG ===');
   }
 
   getFieldError(fieldName: string): string {
@@ -222,15 +267,24 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     const exists = this.beneficiariesFormArray.controls.some(control => 
       control.get('email')?.value === this.newBeneficiaryEmail
     );
-    if (exists) return;
+    if (exists) {
+      alert('Cet email est déjà ajouté comme bénéficiaire');
+      return;
+    }
     
     // Check if total percentage would exceed 100
     const currentTotal = this.getTotalBeneficiaryPercentage();
-    if (currentTotal + this.newBeneficiaryPercentage > 100) return;
+    if (currentTotal + this.newBeneficiaryPercentage > 100) {
+      alert(`Le pourcentage total ne peut pas dépasser 100%. Actuellement: ${currentTotal}%, tentative d'ajout: ${this.newBeneficiaryPercentage}%`);
+      return;
+    }
+    
+    // Generate a default name from email
+    const defaultName = this.newBeneficiaryEmail.split('@')[0];
     
     // Add to FormArray
     const beneficiaryGroup = this.fb.group({
-      name: ['', Validators.required],
+      name: [defaultName, Validators.required],
       email: [this.newBeneficiaryEmail, [Validators.required, Validators.email]],
       percentage: [this.newBeneficiaryPercentage, [Validators.required, Validators.min(1), Validators.max(90)]]
     });
@@ -240,6 +294,9 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     // Reset form
     this.newBeneficiaryEmail = '';
     this.newBeneficiaryPercentage = 0;
+    
+    // Show success message
+    console.log('Bénéficiaire ajouté avec succès');
   }
 
   removeBeneficiary(index: number): void {
@@ -407,7 +464,15 @@ export class CreateEventComponent implements OnInit, OnDestroy {
           .subscribe({
             next: (response) => {
               console.log('Event created successfully:', response);
-              this.router.navigate(['/organizer/events']);
+              
+              // 🎯 ENVOI DES INVITATIONS PAR EMAIL
+              if (formValue.beneficiaries && formValue.beneficiaries.length > 0) {
+                this.sendInvitationsToeBeneficiaries(response.id, formValue.beneficiaries);
+              } else {
+                // Pas de bénéficiaires, aller directement à la liste des événements
+                this.router.navigate(['/organizer/events']);
+                this.isSubmitting = false;
+              }
             },
             error: (error) => {
               console.error('Error creating event:', error);
@@ -418,6 +483,62 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     } else {
       this.markFormGroupTouched(this.eventForm);
     }
+  }
+
+  /**
+   * 📧 Envoyer les invitations par email aux bénéficiaires
+   */
+  private sendInvitationsToeBeneficiaries(eventId: string, beneficiaries: any[]): void {
+    const invitationRequest: InvitationRequest = {
+      eventId: eventId,
+      beneficiaries: beneficiaries.map(b => ({
+        email: b.email,
+        name: b.name || b.email.split('@')[0],
+        percentage: b.percentage
+      }))
+    };
+
+    console.log('Envoi des invitations...', invitationRequest);
+
+    this.invitationService.sendInvitations(invitationRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('Invitations envoyées:', response);
+          
+          if (response.success) {
+            // Afficher un message de succès détaillé
+            let message = `✅ Événement créé avec succès!\n\n`;
+            message += `📧 ${response.invitationsSent} invitation(s) envoyée(s) par email`;
+            
+            if (response.failedInvitations && response.failedInvitations.length > 0) {
+              message += `\n\n⚠️ ${response.failedInvitations.length} invitation(s) échouée(s):`;
+              response.failedInvitations.forEach(failed => {
+                message += `\n• ${failed.email}: ${failed.error}`;
+              });
+            }
+            
+            message += `\n\nLes bénéficiaires recevront un email avec un lien pour créer leur compte et accepter l'invitation.`;
+            
+            alert(message);
+          } else {
+            alert(`⚠️ Événement créé mais erreur lors de l'envoi des invitations:\n${response.message}`);
+          }
+          
+          // Rediriger vers la liste des événements
+          this.router.navigate(['/organizer/events']);
+          this.isSubmitting = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors de l\'envoi des invitations:', error);
+          
+          // Même si les invitations échouent, l'événement a été créé
+          alert(`✅ Événement créé avec succès!\n\n❌ Mais erreur lors de l'envoi des invitations par email.\nVous pouvez renvoyer les invitations depuis la page de gestion des bénéficiaires.`);
+          
+          this.router.navigate(['/organizer/events']);
+          this.isSubmitting = false;
+        }
+      });
   }
 
   onCancel(): void {

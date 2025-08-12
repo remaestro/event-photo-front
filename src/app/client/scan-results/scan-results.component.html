@@ -14,23 +14,31 @@
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
-        Retour au scan
+        Retour
       </button>
       
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900">Vos photos trouvées</h1>
+            <h1 class="text-3xl font-bold text-gray-900">
+              <span *ngIf="eventData">{{ eventData.title }}</span>
+              <span *ngIf="!eventData && eventCode">Photos de l'événement {{ eventCode }}</span>
+              <span *ngIf="!eventData && !eventCode">Vos photos trouvées</span>
+            </h1>
             <p class="text-gray-600 mt-2">
-              {{ foundPhotos.length }} photos où vous apparaissez
-              <span class="ml-2 text-sm">
+              {{ foundPhotos.length }} photo(s) disponible(s)
+              <span *ngIf="eventData" class="ml-2 text-sm">
+                • {{ eventData.organizerName }} • {{ eventData.location }}
+              </span>
+              <span *ngIf="!eventData && sessionId" class="ml-2 text-sm">
                 ({{ highConfidencePhotos.length }} excellentes, {{ mediumConfidencePhotos.length }} bonnes)
               </span>
             </p>
           </div>
           <div class="text-right">
-            <p class="text-sm text-gray-500">Session: {{ sessionId }}</p>
-            <p class="text-lg font-semibold text-indigo-600">Total sélectionné: {{ getTotalPrice() }}€</p>
+            <p *ngIf="sessionId" class="text-sm text-gray-500">Session: {{ sessionId }}</p>
+            <p *ngIf="eventCode" class="text-sm text-gray-500">Code: {{ eventCode }}</p>
+            <p *ngIf="eventData" class="text-sm text-gray-500">{{ eventData.date | date:'medium' }}</p>
           </div>
         </div>
       </div>

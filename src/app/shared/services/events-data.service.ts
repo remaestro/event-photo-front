@@ -142,6 +142,21 @@ export class EventsDataService {
     return this.http.get<EventsResponse>(this.baseUrl, { params });
   }
 
+  /**
+   * Obtenir les événements de l'organisateur connecté
+   */
+  getMyEvents(filters: EventFilters = {}): Observable<EventsResponse> {
+    let params = new HttpParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params = params.set(key, value.toString());
+      }
+    });
+
+    return this.http.get<EventsResponse>(`${this.baseUrl}/user/events`, { params });
+  }
+
   getEvent(id: string): Observable<Event> {
     return this.http.get<Event>(`${this.baseUrl}/${id}`);
   }
