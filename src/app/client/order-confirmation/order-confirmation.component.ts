@@ -1,16 +1,49 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { OrdersDataService, Order } from '../../shared/services/orders-data.service';
 
 interface OrderData {
   id: string;
-  transactionId: string;
-  paymentMethod: string;
-  items: any[];
-  billing: any;
-  summary: any;
-  date: Date;
+  orderNumber?: string;
+  customerId: string;
+  customerFirstName: string;
+  customerLastName: string;
+  customerEmail: string;
+  customerPhone?: string;
   status: string;
+  items: OrderItem[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
+  paymentMethod: string;
+  paymentProvider?: string;
+  paymentIntentId?: string;
+  waveTransactionId?: string;
+  trackingNumber?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  refundAmount?: number;
+  refundReason?: string;
+  cancellationReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface OrderItem {
+  id: string;
+  photoId: string;
+  photo?: {
+    id: string;
+    filename: string;
+    thumbnailUrl?: string;
+  };
+  productType: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  customizations?: string;
 }
 
 @Component({
@@ -20,17 +53,17 @@ interface OrderData {
   styleUrl: './order-confirmation.component.css'
 })
 export class OrderConfirmationComponent implements OnInit {
+  private ordersDataService = inject(OrdersDataService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   orderData: OrderData | null = null;
   isLoading = true;
   orderNotFound = false;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
-
   ngOnInit() {
-    const orderId = this.route.snapshot.queryParams['orderId'];
+    // Récupérer l'orderId depuis les paramètres de route (pas query params)
+    const orderId = this.route.snapshot.paramMap.get('orderId');
     if (orderId) {
       this.loadOrderData(orderId);
     } else {
@@ -40,42 +73,64 @@ export class OrderConfirmationComponent implements OnInit {
   }
 
   private loadOrderData(orderId: string) {
-    try {
-      // Load order from localStorage (in real app, fetch from backend)
-      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      this.orderData = orders.find((order: OrderData) => order.id === orderId);
-      
-      if (!this.orderData) {
+    this.ordersDataService.getOrderById(orderId).subscribe({
+      next: (order: Order) => {
+        if (order) {
+          this.orderData = order;
+          console.log('📦 Order loaded successfully:', order);
+        } else {
+          this.orderNotFound = true;
+        }
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('❌ Error loading order data:', error);
         this.orderNotFound = true;
+        this.isLoading = false;
       }
-    } catch (error) {
-      console.error('Error loading order data:', error);
-      this.orderNotFound = true;
-    } finally {
-      this.isLoading = false;
-    }
+    });
   }
 
   downloadInvoice() {
     if (!this.orderData) return;
     
     try {
-      const invoice = localStorage.getItem(`invoice_${this.orderData.id}`);
-      if (invoice) {
-        // Simulate invoice download
-        console.log('📄 Downloading invoice for order:', this.orderData.id);
-        
-        // In a real app, this would download a PDF file
-        const blob = new Blob([invoice], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `facture-${this.orderData.id}.json`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      }
+      // Générer une facture simple en JSON (en production, récupérer un PDF depuis l'API)
+      const invoice = {
+        invoiceNumber: `INV-${this.orderData.orderNumber || this.orderData.id}`,
+        orderDate: this.orderData.createdAt,
+        customerInfo: this.parseAddress(this.orderData.billingAddress),
+        items: this.orderData.items,
+        summary: {
+          subtotal: this.orderData.subtotal,
+          tax: this.orderData.tax,
+          shipping: this.orderData.shippingCost,
+          total: this.orderData.total
+        },
+        paymentMethod: this.orderData.paymentMethod,
+        transactionId: this.orderData.paymentIntentId || this.orderData.waveTransactionId
+      };
+
+      console.log('📄 Downloading invoice for order:', this.orderData.id);
+      
+      const blob = new Blob([JSON.stringify(invoice, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `facture-${this.orderData.orderNumber || this.orderData.id}.json`;
+      link.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading invoice:', error);
+    }
+  }
+
+  public parseAddress(addressJson?: string): any {
+    if (!addressJson) return {};
+    try {
+      return JSON.parse(addressJson);
+    } catch {
+      return {};
     }
   }
 
@@ -94,7 +149,7 @@ export class OrderConfirmationComponent implements OnInit {
     }).format(amount);
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: string): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
@@ -110,8 +165,53 @@ export class OrderConfirmationComponent implements OnInit {
         return 'Carte bancaire';
       case 'paypal':
         return 'PayPal';
+      case 'wave':
+        return 'Wave';
       default:
         return method;
+    }
+  }
+
+  getPaymentIcon(method: string): string {
+    switch (method) {
+      case 'stripe':
+        return '💳';
+      case 'paypal':
+        return '🅿️';
+      case 'wave':
+        return '📱';
+      default:
+        return '💳';
+    }
+  }
+
+  getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'refunded':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getStatusText(status: string): string {
+    switch (status) {
+      case 'completed':
+        return 'Terminée';
+      case 'pending':
+        return 'En attente';
+      case 'cancelled':
+        return 'Annulée';
+      case 'refunded':
+        return 'Remboursée';
+      default:
+        return status;
     }
   }
 }

@@ -5,55 +5,75 @@ import { environment } from '../../../environments/environment';
 
 export interface Order {
   id: string;
+  orderNumber?: string;
   customerId: string;
+  customerFirstName: string;
+  customerLastName: string;
   customerEmail: string;
-  customerName: string;
+  customerPhone?: string;
+  status: string;
   items: OrderItem[];
-  totalAmount: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  paymentMethod: 'stripe' | 'paypal' | 'bank_transfer';
-  shippingAddress?: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
+  paymentMethod: string;
+  paymentProvider?: string;
+  paymentIntentId?: string;
+  waveTransactionId?: string;
+  trackingNumber?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  refundAmount?: number;
+  refundReason?: string;
+  cancellationReason?: string;
   createdAt: string;
   updatedAt: string;
-  completedAt?: string;
 }
 
 export interface OrderItem {
   id: string;
   photoId: string;
-  photoUrl: string;
-  photoTitle: string;
-  format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20';
+  photo?: {
+    id: string;
+    filename: string;
+    thumbnailUrl?: string;
+  };
+  productType: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  eventId: string;
-  eventTitle: string;
+  customizations?: string;
 }
 
 export interface CreateOrderRequest {
-  items: Array<{
-    photoId: string;
-    format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20';
-    quantity: number;
-  }>;
-  paymentMethod: 'stripe' | 'paypal' | 'bank_transfer';
-  shippingAddress?: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
+  customerId: string;
+  items: OrderItemRequestDto[];
+  customerInfo: CustomerInfoDto;
+  shippingAddress?: ShippingAddressDto;
+  billingAddress?: string; // JSON string
+  paymentMethod: string;
+}
+
+export interface OrderItemRequestDto {
+  photoId: string;
+  quantity: number;
+  format: string;
+  price: number;
+}
+
+export interface CustomerInfoDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+}
+
+export interface ShippingAddressDto {
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
 }
 
 export interface OrderFilters {
@@ -85,7 +105,7 @@ export class OrdersDataService {
     return this.http.post<Order>(this.baseUrl, orderData);
   }
 
-  getOrder(orderId: string): Observable<Order> {
+  getOrderById(orderId: string): Observable<Order> {
     return this.http.get<Order>(`${this.baseUrl}/${orderId}`);
   }
 
@@ -99,5 +119,11 @@ export class OrdersDataService {
     });
 
     return this.http.get<OrdersResponse>(this.baseUrl, { params });
+  }
+
+  updateOrderPaymentId(orderId: string, paymentIntentId: string): Observable<Order> {
+    return this.http.patch<Order>(`${this.baseUrl}/${orderId}`, {
+      paymentIntentId
+    });
   }
 }

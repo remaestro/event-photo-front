@@ -66,36 +66,21 @@ export class CartService {
    * Charger le panier - now uses real API with better error handling
    */
   loadCart(): void {
-    // Check if user is authenticated first
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    // Remove auth token check - allow anonymous carts
+    // const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     
-    if (!token) {
-      console.log('No auth token found, using empty cart');
-      // User not logged in, use empty cart
-      this.cartItemsSubject.next([]);
-      this.updateCartSummary();
-      return;
-    }
+    // if (!token) {
+    //   console.log('No auth token found, using empty cart');
+    //   // User not logged in, use empty cart
+    //   this.cartItemsSubject.next([]);
+    //   this.updateCartSummary();
+    //   return;
+    // }
 
     this.cartDataService.getCart().pipe(
       catchError((error) => {
         console.warn('Cart API call failed:', error);
-        if (error.status === 401) {
-          console.log('User not authenticated, clearing cart');
-          // Clear cart for unauthenticated users
-          this.cartItemsSubject.next([]);
-          this.updateCartSummary();
-          return of({
-            id: 'empty-cart',
-            items: [],
-            totals: { subtotal: 0, tax: 0, total: 0 },
-            itemCount: 0,
-            totalItems: 0,
-            totalPrice: 0,
-            updatedAt: new Date().toISOString()
-          });
-        }
-        // Fallback to mock implementation for other errors
+        // Fallback to mock implementation for any errors
         return this.loadCartMock();
       })
     ).subscribe(apiCart => {
@@ -110,9 +95,11 @@ export class CartService {
    */
   addItem(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number = 1, format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
     const request: AddCartItemRequest = {
-      photoId,
+      photoId: photoId.toString(), // S'assurer que c'est une string
       quantity,
-      format
+      format,
+      productType: format, // Ajouter productType qui correspond au format
+      customizations: undefined
     };
 
     return this.cartDataService.addItem(request).pipe(

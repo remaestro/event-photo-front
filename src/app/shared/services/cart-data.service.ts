@@ -33,6 +33,8 @@ export interface AddCartItemRequest {
   photoId: string;
   quantity: number;
   format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20';
+  productType?: string;
+  customizations?: string;
 }
 
 export interface UpdateCartItemRequest {

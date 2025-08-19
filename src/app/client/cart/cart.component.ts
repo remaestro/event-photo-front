@@ -230,7 +230,7 @@ export class CartComponent implements OnInit, OnDestroy {
   // Procéder au checkout
   proceedToCheckout(): void {
     if (this.cartSummary.items.length > 0) {
-      this.router.navigate(['/client/checkout']);
+      this.router.navigate(['/checkout']); // CORRIGÉ: était '/client/checkout'
     }
   }
 

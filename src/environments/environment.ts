@@ -5,6 +5,9 @@ export const environment = {
   stripePublicKey: 'pk_test_51234567890',
   faceRecognitionApiUrl: 'https://face-api.eventphoto.local',
   websocketUrl: 'ws://localhost:5290/hub',
+  // NOUVEAU: Configuration Wave
+  waveApiKey: 'wave_test_api_key_12345',
+  waveMerchantId: 'merchant_test_67890',
   fileUpload: {
     maxFileSize: 52428800, // 50MB
     allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -14,7 +17,8 @@ export const environment = {
     enableFaceRecognition: true,
     enableRealTimeNotifications: true,
     enableAdvancedAnalytics: true,
-    enableBulkOperations: true
+    enableBulkOperations: true,
+    enableWavePayments: true // NOUVEAU
   },
   app: {
     name: 'Event Photo Platform',

@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CartService, CartSummary } from '../../shared/services/cart.service';
+import { WavePaymentService } from '../../shared/services/wave-payment.service';
+import { OrdersDataService } from '../../shared/services/orders-data.service';
 
 interface PaymentMethod {
   id: string;
@@ -41,6 +43,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private cartService = inject(CartService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private wavePaymentService = inject(WavePaymentService);
+  private ordersDataService = inject(OrdersDataService);
   private cartSubscription?: Subscription;
 
   checkoutForm: FormGroup;
@@ -67,6 +71,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       name: 'PayPal',
       icon: '🅿️',
       description: 'Paiement sécurisé via PayPal'
+    },
+    {
+      id: 'wave',
+      name: 'Wave',
+      icon: '📱',
+      description: 'Paiement mobile sécurisé via Wave'
     }
   ];
 
@@ -176,6 +186,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         await this.processStripePayment(billingInfo);
       } else if (this.selectedPaymentMethod === 'paypal') {
         await this.processPayPalPayment(billingInfo);
+      } else if (this.selectedPaymentMethod === 'wave') {
+        await this.processWavePayment(billingInfo);
       }
     } catch (error) {
       console.error('Payment failed:', error);
@@ -225,33 +237,84 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   }
 
+  async processWavePayment(billingInfo: BillingInfo) {
+    try {
+      console.log('Processing Wave payment...', billingInfo);
+      
+      // Utiliser le service Wave existant avec gestion d'erreur
+      const waveResponse = await this.wavePaymentService.initiatePayment(
+        this.cartSummary.items,
+        {
+          name: `${billingInfo.firstName} ${billingInfo.lastName}`,
+          email: billingInfo.email,
+          phone: billingInfo.phone
+        },
+        { orderId: `ORDER_${Date.now()}` }
+      ).toPromise();
+      
+      // Vérification stricte de la réponse
+      if (waveResponse && waveResponse.success && waveResponse.paymentId) {
+        // Créer la commande avec les données Wave
+        this.completeOrder(waveResponse.paymentId, 'wave');
+      } else {
+        throw new Error('Wave payment initiation failed');
+      }
+      
+    } catch (error) {
+      console.error('Wave payment failed:', error);
+      throw error;
+    }
+  }
+
   completeOrder(transactionId: string, paymentMethod: string) {
+    // Préparer les items du panier pour la commande
+    const orderItems = this.cartSummary.items.map(item => ({
+      photoId: item.photoId.toString(),
+      quantity: item.quantity,
+      format: 'digital', // Valeur par défaut, pourrait être récupérée du panier si disponible
+      price: item.price
+    }));
+
     const orderData = {
-      id: 'order_' + Date.now(),
-      transactionId,
-      paymentMethod,
-      items: this.cartSummary.items,
-      billing: this.checkoutForm.value,
-      summary: this.orderSummary,
-      date: new Date(),
-      status: 'completed'
+      customerId: "1", // TODO: Get from auth service
+      items: orderItems,
+      customerInfo: {
+        firstName: this.checkoutForm.value.firstName,
+        lastName: this.checkoutForm.value.lastName,
+        email: this.checkoutForm.value.email,
+        phone: this.checkoutForm.value.phone
+      },
+      shippingAddress: {
+        street: this.checkoutForm.value.address,
+        city: this.checkoutForm.value.city,
+        postalCode: this.checkoutForm.value.postalCode,
+        country: this.checkoutForm.value.country
+      },
+      billingAddress: JSON.stringify({
+        address: this.checkoutForm.value.address,
+        city: this.checkoutForm.value.city,
+        postalCode: this.checkoutForm.value.postalCode,
+        country: this.checkoutForm.value.country
+      }),
+      paymentMethod
     };
 
-    // Store order in localStorage (in real app, save to backend)
-    const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-    existingOrders.push(orderData);
-    localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+    // Appeler l'API pour créer la commande en base de données
+    this.ordersDataService.createOrder(orderData).subscribe({
+      next: (createdOrder) => {
+        console.log('📦 Order created successfully:', createdOrder);
+        
+        // Clear cart
+        this.cartService.clearCart();
 
-    // Simulate sending confirmation email and invoice
-    this.sendOrderConfirmationEmail(orderData);
-    this.generateInvoice(orderData);
-
-    // Clear cart
-    this.cartService.clearCart();
-
-    // Redirect to confirmation page
-    this.router.navigate(['/order-confirmation'], {
-      queryParams: { orderId: orderData.id }
+        // Redirect to confirmation page with the real order ID
+        this.router.navigate(['/order-confirmation', createdOrder.id]);
+      },
+      error: (error) => {
+        console.error('❌ Failed to create order:', error);
+        alert('Erreur lors de la création de la commande. Veuillez réessayer.');
+        this.isProcessing = false;
+      }
     });
   }
 

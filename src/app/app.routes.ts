@@ -51,6 +51,11 @@ export const routes: Routes = [
     loadComponent: () => import('./client/checkout/checkout.component').then(c => c.CheckoutComponent),
     canActivate: [authGuard]
   },
+  // NOUVEAU: Route Wave Status
+  { 
+    path: 'client/wave-status', 
+    loadComponent: () => import('./client/wave-status/wave-status.component').then(c => c.WaveStatusComponent)
+  },
   { 
     path: 'order-confirmation/:orderId', 
     loadComponent: () => import('./client/order-confirmation/order-confirmation.component').then(c => c.OrderConfirmationComponent),
