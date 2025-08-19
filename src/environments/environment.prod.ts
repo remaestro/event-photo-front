@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.eventphoto.com',
+  apiUrl: 'https://event-photo-backend.azurewebsites.net',
   cdnUrl: 'https://cdn.eventphoto.com',
   stripePublicKey: 'pk_live_production_key_here',
   faceRecognitionApiUrl: 'https://face-api.eventphoto.com',
