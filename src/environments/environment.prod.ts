@@ -1,10 +1,10 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://event-photo-back-h3gqdbh8bvcrccae.westeurope-01.azurewebsites.net',
+  apiUrl: 'https://event-photo-api.azurewebsites.net',
   cdnUrl: 'https://cdn.eventphoto.com',
   stripePublicKey: 'pk_live_production_key_here',
   faceRecognitionApiUrl: 'https://face-api.eventphoto.com',
-  websocketUrl: 'wss://event-photo-back-h3gqdbh8bvcrccae.westeurope-01.azurewebsites.net/hub',
+  websocketUrl: 'wss://event-photo-api.azurewebsites.net/hub',
   fileUpload: {
     maxFileSize: 52428800, // 50MB
     allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
