@@ -31,6 +31,14 @@ jobs:
         run: npm ci
       - name: Build Angular app for production
         run: npm run build -- --configuration=production
+      - name: List build output for debugging
+        run: |
+          echo "Contents of dist directory:"
+          ls -la dist/
+          echo "Contents of dist/browser directory:"
+          ls -la dist/browser/
+          echo "Checking for index.html:"
+          ls -la dist/browser/index.html
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token
