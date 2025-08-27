@@ -173,14 +173,14 @@
                 </div>
                 <div>
                   <p class="text-sm text-gray-600">Prix unitaire</p>
-                  <p class="text-lg font-semibold text-blue-600">{{ formatCurrency(event.price) }}</p>
+                  <p class="text-lg font-semibold text-blue-600">{{ formatCurrency(event.price, event.currency) }}</p>
                 </div>
               </div>
 
               <div class="space-y-4">
                 <div>
                   <p class="text-sm text-gray-600">Revenus</p>
-                  <p class="text-2xl font-bold text-green-600">{{ formatCurrency(event.revenue) }}</p>
+                  <p class="text-2xl font-bold text-green-600">{{ formatCurrency(event.revenue, event.currency) }}</p>
                 </div>
                 <div>
                   <p class="text-sm text-gray-600">Bénéficiaires</p>

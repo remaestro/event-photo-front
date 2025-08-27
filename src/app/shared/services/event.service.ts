@@ -12,6 +12,7 @@ export interface Event {
   organizer: string;
   photoCount: number;
   price: number;
+  currency?: string;
   tags: string[];
   gradient: string;
   qrCode?: string;
@@ -209,6 +210,7 @@ export class EventService {
       photoCount: apiEvent.photosCount,
       photosCount: apiEvent.photosCount, // Alias for backward compatibility
       price: apiEvent.photoPrice,
+      currency: apiEvent.currency,
       tags: apiEvent.tags,
       gradient: this.generateGradient(apiEvent.tags),
       qrCode: apiEvent.qrCode,

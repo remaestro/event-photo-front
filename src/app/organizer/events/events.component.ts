@@ -218,10 +218,11 @@ export class EventsComponent implements OnInit, OnDestroy {
     return '🌍'; // All events are public for now
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number, currency?: string): string {
+    const currencyCode = currency || 'EUR';
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: currencyCode
     }).format(amount);
   }
 

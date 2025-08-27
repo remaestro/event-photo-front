@@ -449,7 +449,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         beneficiaries: formValue.beneficiaries?.map((b: any) => ({
           email: b.email,
           percentage: b.percentage,
-          status: 'pending'
+          status: 'to_be_sent'
         })) || []
       };
 
