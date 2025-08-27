@@ -21,6 +21,7 @@ interface AdminEvent {
   photosRejected: number;
   salesCount: number;
   totalRevenue: number;
+  currency?: string; // NOUVEAU : Ajouter la devise pour l'affichage
   participantsCount: number;
   beneficiaries: Beneficiary[];
   createdAt: string;
@@ -147,6 +148,7 @@ export class EventsComponent implements OnInit, OnDestroy {
           photosRejected: 4,
           salesCount: 89,
           totalRevenue: 1856.40,
+          currency: 'EUR', // NOUVEAU : Devise Euro
           participantsCount: 150,
           beneficiaries: [
             {
@@ -180,7 +182,8 @@ export class EventsComponent implements OnInit, OnDestroy {
           photosPending: 45,
           photosRejected: 22,
           salesCount: 234,
-          totalRevenue: 4567.80,
+          totalRevenue: 2850000, // 2,85 millions CFA
+          currency: 'XOF', // NOUVEAU : Franc CFA
           participantsCount: 5000,
           beneficiaries: [
             {
@@ -231,7 +234,8 @@ export class EventsComponent implements OnInit, OnDestroy {
           photosPending: 0,
           photosRejected: 2,
           salesCount: 12,
-          totalRevenue: 234.50,
+          totalRevenue: 284.50,
+          currency: 'USD', // NOUVEAU : Dollar américain
           participantsCount: 200,
           beneficiaries: [],
           createdAt: '2025-06-01T08:00:00Z',
@@ -258,6 +262,7 @@ export class EventsComponent implements OnInit, OnDestroy {
           photosRejected: 7,
           salesCount: 0,
           totalRevenue: 0,
+          currency: 'CHF', // NOUVEAU : Franc suisse
           participantsCount: 10,
           beneficiaries: [],
           createdAt: '2025-07-01T16:00:00Z',
@@ -547,11 +552,31 @@ export class EventsComponent implements OnInit, OnDestroy {
     return new Date(dateString).toLocaleString('fr-FR');
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+  formatCurrency(amount: number, currency?: string): string {
+    // Utiliser la devise fournie ou EUR par défaut
+    const currencyCode = currency || 'EUR';
+    
+    // Configuration des locales selon la devise
+    const localeMap: { [key: string]: string } = {
+      'EUR': 'fr-FR',
+      'USD': 'en-US', 
+      'GBP': 'en-GB',
+      'CHF': 'de-CH',
+      'CAD': 'en-CA',
+      'XOF': 'fr-FR' // Franc CFA utilise la locale française
+    };
+    
+    const locale = localeMap[currencyCode] || 'fr-FR';
+    
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currencyCode
+      }).format(amount);
+    } catch (error) {
+      // Fallback en cas d'erreur de formatage
+      return `${amount.toFixed(2)} ${currencyCode}`;
+    }
   }
 
   promptForReason(message: string): string {

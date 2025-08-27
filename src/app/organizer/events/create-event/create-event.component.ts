@@ -6,6 +6,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { EventsDataService, CreateEventRequest, Event } from '../../../shared/services/events-data.service';
 import { AuthService } from '../../../shared/services/auth.service';
 import { InvitationService, InvitationRequest } from '../../../shared/services/invitation.service';
+import { CurrencyService, CurrencyOption } from '../../../shared/services/currency.service';
 
 export interface Beneficiary {
   email: string;
@@ -30,6 +31,10 @@ export class CreateEventComponent implements OnInit, OnDestroy {
   editEventId: string | null = null;
   isEditMode = false;
   
+  // Currency selection - initialiser après l'injection
+  supportedCurrencies: CurrencyOption[] = [];
+  selectedCurrency = 'EUR'; // Devise par défaut
+  
   // Tag management
   currentTag = '';
   showTagSuggestions = false;
@@ -52,12 +57,16 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private eventsDataService: EventsDataService,
     private authService: AuthService,
-    private invitationService: InvitationService
+    private invitationService: InvitationService,
+    public currencyService: CurrencyService // Changer de private à public pour l'accès dans le template
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
+    // Initialiser les devises supportées après l'injection
+    this.supportedCurrencies = this.currencyService.getSupportedCurrencies();
+    
     // Check if we're duplicating or editing an event
     this.duplicateEventId = this.route.snapshot.queryParams['duplicate'];
     
@@ -429,6 +438,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         date: formValue.date,
         organizerId: currentUser?.id || '',
         photoPrice: formValue.photoPrice || 0,
+        currency: this.selectedCurrency, // NOUVEAU : Envoyer la devise sélectionnée
         settings: formValue.settings || {
           allowDownload: true,
           allowShare: true,
@@ -606,5 +616,37 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         this.markFormGroupTouched(control);
       }
     });
+  }
+
+  // Currency management methods
+  onCurrencyChange(currencyCode: string): void {
+    const previousCurrency = this.selectedCurrency;
+    this.selectedCurrency = currencyCode;
+    
+    // Get current price and convert it to new currency
+    const currentPrice = this.eventForm.get('photoPrice')?.value || 0;
+    if (currentPrice > 0 && previousCurrency !== currencyCode) {
+      const convertedPrice = this.currencyService.convertPrice(currentPrice, previousCurrency, currencyCode);
+      this.eventForm.patchValue({ photoPrice: convertedPrice });
+    } else {
+      // Set default price for the new currency
+      const defaultPrice = this.currencyService.getDefaultPriceForCurrency(currencyCode);
+      this.eventForm.patchValue({ photoPrice: defaultPrice });
+    }
+  }
+
+  formatCurrencyPreview(amount: number): string {
+    return this.currencyService.formatCurrency(amount, this.selectedCurrency);
+  }
+
+  getCurrencySymbol(): string {
+    const currency = this.currencyService.getCurrencyByCode(this.selectedCurrency);
+    return currency?.symbol || '€';
+  }
+
+  // Helper method to get currency flag emoji
+  getCurrencyFlag(currencyCode: string): string {
+    const currency = this.currencyService.getCurrencyByCode(currencyCode);
+    return currency?.flag || '🌍';
   }
 }

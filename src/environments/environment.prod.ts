@@ -20,5 +20,11 @@ export const environment = {
     name: 'Event Photo Platform',
     version: '1.0.0',
     supportEmail: 'support@eventphoto.com'
+  },
+  currency: {
+    code: 'EUR',
+    symbol: '€',
+    locale: 'fr-FR',
+    defaultPhotoPrice: 5.99
   }
 };

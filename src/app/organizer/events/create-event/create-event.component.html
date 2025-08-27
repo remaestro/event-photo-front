@@ -100,7 +100,7 @@
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-bold text-gray-900 mb-6">Paramètres</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Visibility -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -132,24 +132,73 @@
             </div>
           </div>
 
+          <!-- Currency Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Devise de vente *
+            </label>
+            <select 
+              [(ngModel)]="selectedCurrency"
+              [ngModelOptions]="{standalone: true}"
+              (change)="onCurrencyChange(selectedCurrency)"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+              <option *ngFor="let currency of supportedCurrencies" [value]="currency.code">
+                {{ currency.flag }} {{ currency.name }} ({{ currency.symbol }})
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">
+              Prix suggéré: {{ formatCurrencyPreview(currencyService.getDefaultPriceForCurrency(selectedCurrency)) }}
+            </p>
+          </div>
+
           <!-- Price -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Prix par photo (€) *
+              Prix par photo *
             </label>
-            <input 
-              type="number" 
-              formControlName="photoPrice"
-              step="0.01"
-              min="0.50"
-              max="99.99"
-              placeholder="8.99"
-              [class]="'w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ' + 
-                      (isFieldInvalid('photoPrice') ? 'border-red-300' : 'border-gray-300')">
+            <div class="relative">
+              <input 
+                type="number" 
+                formControlName="photoPrice"
+                step="0.01"
+                min="0.50"
+                max="99999.99"
+                [placeholder]="currencyService.getDefaultPriceForCurrency(selectedCurrency).toString()"
+                [class]="'w-full border rounded-md px-3 py-2 pr-12 focus:ring-blue-500 focus:border-blue-500 ' + 
+                        (isFieldInvalid('photoPrice') ? 'border-red-300' : 'border-gray-300')">
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <span class="text-gray-500 text-sm">{{ getCurrencySymbol() }}</span>
+              </div>
+            </div>
             <div *ngIf="isFieldInvalid('photoPrice')" class="mt-1 text-sm text-red-600">
               {{ getFieldError('photoPrice') }}
             </div>
-            <p class="mt-1 text-sm text-gray-600">Prix recommandé: 5€ - 15€</p>
+            <div *ngIf="eventForm.get('photoPrice')?.value > 0" class="mt-1 text-sm text-green-600">
+              💰 Aperçu: {{ formatCurrencyPreview(eventForm.get('photoPrice')?.value) }}
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Prix recommandé selon la devise sélectionnée
+            </p>
+          </div>
+        </div>
+
+        <!-- Currency conversion notice -->
+        <div *ngIf="selectedCurrency !== 'EUR'" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-blue-800">
+                💱 Conversion automatique activée
+              </h3>
+              <p class="text-sm text-blue-700 mt-1">
+                Les prix ont été automatiquement convertis vers {{ getCurrencyFlag(selectedCurrency) }} {{ selectedCurrency }}. 
+                Les taux de change sont approximatifs et mis à jour régulièrement.
+              </p>
+            </div>
           </div>
         </div>
       </div>

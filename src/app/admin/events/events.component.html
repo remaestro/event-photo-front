@@ -260,7 +260,7 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <div class="font-medium">{{ formatCurrency(event.totalRevenue) }}</div>
+                  <div class="font-medium">{{ formatCurrency(event.totalRevenue, event.currency) }}</div>
                   <div class="text-xs text-gray-500" *ngIf="event.beneficiaries.length > 0">
                     {{ event.beneficiaries.length }} bénéficiaire(s)
                   </div>

@@ -20,6 +20,7 @@ export interface Event {
   };
   photosCount: number;
   photoPrice: number;
+  currency?: string; // NOUVEAU : Ajouter la devise pour l'affichage
   tags: string[];
   qrCode: string;
   revenue: number;
@@ -67,6 +68,7 @@ export interface CreateEventRequest {
   date: string;
   organizerId?: string;
   photoPrice: number;
+  currency?: string; // NOUVEAU : Ajouter le support de la devise
   settings?: {
     allowDownload: boolean;
     allowShare: boolean;

@@ -1,13 +1,10 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5290',
-  cdnUrl: 'https://cdn.eventphoto.local',
-  stripePublicKey: 'pk_test_51234567890',
-  faceRecognitionApiUrl: 'https://face-api.eventphoto.local',
-  websocketUrl: 'ws://localhost:5290/hub',
-  // NOUVEAU: Configuration Wave
-  waveApiKey: 'wave_test_api_key_12345',
-  waveMerchantId: 'merchant_test_67890',
+  apiUrl: 'http://localhost:8080', // Correction: port 8080 au lieu de 5000
+  cdnUrl: 'http://localhost:3000',
+  stripePublicKey: 'pk_test_development_key_here',
+  faceRecognitionApiUrl: 'http://localhost:8080',
+  websocketUrl: 'ws://localhost:8080/hub', // Correction: port 8080 au lieu de 5000
   fileUpload: {
     maxFileSize: 52428800, // 50MB
     allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -15,14 +12,19 @@ export const environment = {
   },
   features: {
     enableFaceRecognition: true,
-    enableRealTimeNotifications: true,
-    enableAdvancedAnalytics: true,
-    enableBulkOperations: true,
-    enableWavePayments: true // NOUVEAU
+    enableRealTimeNotifications: false, // Disable in dev for simplicity
+    enableAdvancedAnalytics: false,
+    enableBulkOperations: true
   },
   app: {
-    name: 'Event Photo Platform',
-    version: '1.0.0',
-    supportEmail: 'support@eventphoto.com'
+    name: 'Event Photo Platform (Dev)',
+    version: '1.0.0-dev',
+    supportEmail: 'dev@eventphoto.com'
+  },
+  currency: {
+    code: 'EUR',
+    symbol: '€',
+    locale: 'fr-FR',
+    defaultPhotoPrice: 5.99
   }
 };
