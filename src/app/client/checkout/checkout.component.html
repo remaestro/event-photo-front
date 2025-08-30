@@ -306,9 +306,10 @@
           <!-- Cart Items Preview -->
           <div class="space-y-3 mb-6">
             <div *ngFor="let item of cartSummary.items.slice(0, 3)" class="flex items-center space-x-3">
-              <img [src]="item.thumbnail" 
+              <img [src]="getPhotoThumbnailUrl(item.photoId)" 
                    [alt]="'Photo ' + item.photoId"
-                   class="w-12 h-12 object-cover rounded border">
+                   class="w-12 h-12 object-cover rounded border"
+                   (error)="onImageError($event)">
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">
                   Photo #{{ item.photoId }}
@@ -316,7 +317,7 @@
                 <p class="text-xs text-gray-500">{{ item.eventName }}</p>
               </div>
               <div class="text-sm font-medium text-gray-900">
-                {{ item.price.toFixed(2) }}€
+                {{ formatCurrency(item.price) }}
               </div>
             </div>
             
@@ -329,23 +330,23 @@
           <div class="space-y-3 border-t border-gray-200 pt-4">
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Sous-total ({{ orderSummary.itemCount }} photos)</span>
-              <span class="font-medium">{{ orderSummary.subtotal.toFixed(2) }}€</span>
+              <span class="font-medium">{{ formatCurrency(orderSummary.subtotal) }}</span>
             </div>
             
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">TVA (20%)</span>
-              <span class="font-medium">{{ orderSummary.tax.toFixed(2) }}€</span>
+              <span class="font-medium">{{ formatCurrency(orderSummary.tax) }}</span>
             </div>
             
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Frais de traitement</span>
-              <span class="font-medium">{{ orderSummary.processing.toFixed(2) }}€</span>
+              <span class="font-medium">{{ formatCurrency(orderSummary.processing) }}</span>
             </div>
             
             <div class="border-t border-gray-200 pt-3">
               <div class="flex justify-between items-center">
                 <span class="text-lg font-semibold text-gray-900">Total</span>
-                <span class="text-2xl font-bold text-gray-900">{{ orderSummary.total.toFixed(2) }}€</span>
+                <span class="text-2xl font-bold text-gray-900">{{ formatCurrency(orderSummary.total) }}</span>
               </div>
             </div>
           </div>
@@ -359,7 +360,7 @@
               <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
               </svg>
-              Payer maintenant {{ orderSummary.total.toFixed(2) }}€
+              Payer maintenant {{ formatCurrency(orderSummary.total) }}
             </span>
             <span *ngIf="isProcessing" class="flex items-center justify-center">
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">

@@ -45,11 +45,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // Client routes nécessitant une authentification
+  // Client routes - checkout accessible sans authentification
   { 
     path: 'checkout', 
-    loadComponent: () => import('./client/checkout/checkout.component').then(c => c.CheckoutComponent),
-    canActivate: [authGuard]
+    loadComponent: () => import('./client/checkout/checkout.component').then(c => c.CheckoutComponent)
+    // Retrait de canActivate: [authGuard] pour permettre l'accès anonyme
   },
   // NOUVEAU: Route Wave Status
   { 
@@ -58,8 +58,8 @@ export const routes: Routes = [
   },
   { 
     path: 'order-confirmation/:orderId', 
-    loadComponent: () => import('./client/order-confirmation/order-confirmation.component').then(c => c.OrderConfirmationComponent),
-    canActivate: [authGuard]
+    loadComponent: () => import('./client/order-confirmation/order-confirmation.component').then(c => c.OrderConfirmationComponent)
+    // Retrait de canActivate: [authGuard] pour permettre l'accès anonyme après achat
   },
   { 
     path: 'my-purchases', 

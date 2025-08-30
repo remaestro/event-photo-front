@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { CartService, CartItem, CartSummary, CartStats } from '../../shared/services/cart.service';
+import { ImageUrlService } from '../../shared/services/image-url.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-cart',
@@ -35,10 +38,15 @@ export class CartComponent implements OnInit, OnDestroy {
   isUpdatingQuantity = false;
   lastAction = '';
   private cartSubscription?: Subscription;
+  
+  // Cache pour stocker les informations de devise par événement
+  private eventCurrencies: Map<string, string> = new Map();
 
   constructor(
     private cartService: CartService,
-    private router: Router
+    private router: Router,
+    private imageUrlService: ImageUrlService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -234,8 +242,46 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Formater le prix
-  formatPrice(price: number): string {
-    return price.toFixed(2);
+  // Formater le prix avec la devise de l'événement
+  formatPrice(price: number, item?: CartItem): string {
+    const currency = item?.currency || this.getDominantCurrency();
+    const currencySymbols: { [key: string]: string } = {
+      'EUR': '€',
+      'USD': '$',
+      'GBP': '£',
+      'CAD': 'C$',
+      'XOF': 'CFA'
+    };
+    
+    const symbol = currencySymbols[currency] || currency;
+    return `${price.toFixed(2)}${symbol}`;
+  }
+
+  // Obtenir la devise dominante du panier (la plus fréquente)
+  getDominantCurrency(): string {
+    if (!this.cartSummary.items || this.cartSummary.items.length === 0) {
+      return 'EUR';
+    }
+
+    const currencyCount: { [key: string]: number } = {};
+    this.cartSummary.items.forEach(item => {
+      const currency = item.currency || 'EUR';
+      currencyCount[currency] = (currencyCount[currency] || 0) + 1;
+    });
+
+    // Retourner la devise la plus fréquente
+    return Object.keys(currencyCount).reduce((a, b) => 
+      currencyCount[a] > currencyCount[b] ? a : b
+    );
+  }
+
+  // Obtenir l'URL du thumbnail de la photo
+  getPhotoThumbnailUrl(photoId: string): string {
+    return this.imageUrlService.getThumbnailUrl(photoId);
+  }
+
+  // Gérer les erreurs d'image
+  onImageError(event: Event): void {
+    this.imageUrlService.onImageError(event);
   }
 }

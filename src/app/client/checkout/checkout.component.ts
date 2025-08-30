@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { CartService, CartSummary } from '../../shared/services/cart.service';
 import { WavePaymentService } from '../../shared/services/wave-payment.service';
 import { OrdersDataService } from '../../shared/services/orders-data.service';
+import { ImageUrlService } from '../../shared/services/image-url.service';
 
 interface PaymentMethod {
   id: string;
@@ -45,6 +46,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private wavePaymentService = inject(WavePaymentService);
   private ordersDataService = inject(OrdersDataService);
+  private imageUrlService = inject(ImageUrlService);
   private cartSubscription?: Subscription;
 
   checkoutForm: FormGroup;
@@ -58,6 +60,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     totalPrice: 0,
     uniqueEvents: 0
   };
+  
+  // Devise de l'événement en cours
+  eventCurrency: string = 'EUR';
   
   paymentMethods: PaymentMethod[] = [
     {
@@ -120,6 +125,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.cartSubscription = this.cartService.getCart().subscribe(summary => {
       this.cartSummary = summary;
       this.calculateOrderSummary();
+      
+      // Get currency from the first item (since one event per checkout)
+      if (summary.items && summary.items.length > 0) {
+        this.eventCurrency = summary.items[0].currency || 'EUR';
+      }
     });
     
     this.loadStripe();
@@ -381,7 +391,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: this.eventCurrency
     }).format(amount);
+  }
+
+  // Obtenir l'URL du thumbnail de la photo
+  getPhotoThumbnailUrl(photoId: string): string {
+    return this.imageUrlService.getThumbnailUrl(photoId);
+  }
+
+  // Gérer les erreurs d'image
+  onImageError(event: Event): void {
+    this.imageUrlService.onImageError(event);
   }
 }

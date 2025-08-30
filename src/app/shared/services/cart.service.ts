@@ -13,6 +13,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   addedAt: string;
+  currency?: string; // Devise de l'événement
   photographer?: string; // Add for backward compatibility
   timestamp?: string; // Add for backward compatibility
   thumbnail?: string; // Add for backward compatibility (alias for photoThumbnail)
@@ -93,7 +94,7 @@ export class CartService {
   /**
    * Ajouter un item au panier - now uses real API
    */
-  addItem(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number = 1, format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
+  addItem(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number = 1, currency: string = 'EUR', format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
     const request: AddCartItemRequest = {
       photoId: photoId.toString(), // S'assurer que c'est une string
       quantity,
@@ -111,7 +112,7 @@ export class CartService {
       }),
       catchError(() => {
         // Fallback to mock implementation
-        return this.addItemMock(photoId, eventId, eventName, photoUrl, photoThumbnail, price, quantity);
+        return this.addItemMock(photoId, eventId, eventName, photoUrl, photoThumbnail, price, quantity, currency);
       })
     );
   }
@@ -251,7 +252,7 @@ export class CartService {
   /**
    * Ajouter plusieurs items au panier
    */
-  addMultipleToCart(items: Array<{photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity?: number}>): Observable<boolean> {
+  addMultipleToCart(items: Array<{photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity?: number, currency?: string}>): Observable<boolean> {
     const addPromises = items.map(item => 
       this.addItem(
         item.photoId,
@@ -260,7 +261,8 @@ export class CartService {
         item.photoUrl,
         item.photoThumbnail,
         item.price,
-        item.quantity || 1
+        item.quantity || 1,
+        item.currency || 'EUR'
       ).toPromise()
     );
 
@@ -378,7 +380,7 @@ export class CartService {
     }).pipe(delay(300));
   }
 
-  private addItemMock(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number): Observable<boolean> {
+  private addItemMock(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number, currency: string = 'EUR'): Observable<boolean> {
     return of(null).pipe(
       delay(200),
       map(() => {
@@ -399,6 +401,7 @@ export class CartService {
             photoThumbnail,
             price,
             quantity,
+            currency,
             addedAt: new Date().toISOString()
           };
           currentItems.push(newItem);

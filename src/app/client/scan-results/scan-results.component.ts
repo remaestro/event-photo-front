@@ -51,6 +51,8 @@ export class ScanResultsComponent implements OnInit {
   previewPhoto: Photo | null = null;
   showPreviewModal = false;
   eventData: any = null;
+  eventCurrency: string = 'EUR';
+  eventPhotoPrice: number = 5.99;
 
   constructor(
     private router: Router,
@@ -236,11 +238,12 @@ export class ScanResultsComponent implements OnInit {
       const cartItems = selectedPhotos.map(photo => ({
         photoId: photo.id,
         eventId: photo.eventId,
-        eventName: `Événement ${photo.eventId}`, // Nom d'événement par défaut
+        eventName: this.eventData?.name || `Événement ${photo.eventId}`, // Use event name from data
         photoUrl: photo.imageUrl,
         photoThumbnail: photo.thumbnail, // Use photoThumbnail instead of thumbnail
         price: photo.price,
-        quantity: 1 // Added quantity property
+        quantity: 1, // Added quantity property
+        currency: this.eventCurrency // Add currency from event
       }));
 
       this.cartService.addMultipleToCart(cartItems);
@@ -282,6 +285,10 @@ export class ScanResultsComponent implements OnInit {
       const eventResponse = await this.http.get<any>(`${environment.apiUrl}/api/events/public/${this.eventCode}`).toPromise();
       this.eventData = eventResponse;
       this.eventId = eventResponse.id;
+      
+      // Récupérer les informations de devise et prix de l'événement
+      this.eventCurrency = eventResponse.currency || 'EUR';
+      this.eventPhotoPrice = eventResponse.photoPrice || 5.99;
 
       // Puis charger les photos de l'événement
       const photosResponse = await this.http.get<any>(`${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`).toPromise();
@@ -346,17 +353,22 @@ export class ScanResultsComponent implements OnInit {
   }
 
   private calculatePhotoPrice(photo: any): number {
-    // Logique de pricing basée sur la qualité/taille de la photo
-    const fileSize = photo.fileSize || 0;
-    const dimensions = photo.dimensions;
+    // Utiliser le prix défini pour l'événement au lieu d'une logique de calcul
+    return this.eventPhotoPrice;
+  }
+
+  // Formater le prix avec la devise de l'événement
+  formatPrice(price: number): string {
+    const currencySymbols: { [key: string]: string } = {
+      'EUR': '€',
+      'USD': '$',
+      'GBP': '£',
+      'CAD': 'C$',
+      'XOF': 'CFA'
+    };
     
-    if (dimensions && dimensions.width * dimensions.height > 8000000) { // 8MP+
-      return 8.99;
-    } else if (fileSize > 5000000) { // 5MB+
-      return 6.99;
-    } else {
-      return 4.99;
-    }
+    const symbol = currencySymbols[this.eventCurrency] || this.eventCurrency;
+    return `${price.toFixed(2)}${symbol}`;
   }
 
   private formatDate(dateString: string): string {

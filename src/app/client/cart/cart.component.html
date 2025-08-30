@@ -11,7 +11,7 @@
       <div *ngIf="cartSummary.items.length > 0" class="mt-4 flex flex-wrap gap-4 text-sm text-gray-500">
         <span>{{ cartSummary.uniqueEvents }} événement(s)</span>
         <span>{{ cartSummary.totalItems }} photo(s)</span>
-        <span>Prix moyen: {{ formatPrice(cartStats.averagePrice) }}€</span>
+        <span>Prix moyen: {{ formatPrice(cartStats.averagePrice) }}</span>
         <span *ngIf="cartStats.oldestItem" class="text-gray-400">
           Ajouté {{ getTimeAgoFromDate(cartStats.oldestItem) }}
         </span>
@@ -96,9 +96,10 @@
             <div class="flex items-center space-x-4">
               <!-- Photo Thumbnail -->
               <div class="flex-shrink-0">
-                <img [src]="item.thumbnail" 
+                <img [src]="getPhotoThumbnailUrl(item.photoId)" 
                      [alt]="'Photo ' + item.photoId"
-                     class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                     class="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                     (error)="onImageError($event)">
               </div>
 
               <!-- Photo Details -->
@@ -116,7 +117,7 @@
                   Ajouté {{ getTimeAgo(item.addedAt) }}
                 </p>
                 <p class="text-lg font-semibold text-gray-900 mt-1">
-                  {{ formatPrice(item.price) }} €
+                  {{ formatPrice(item.price, item) }}
                 </p>
               </div>
 
@@ -149,7 +150,7 @@
               <!-- Item Total -->
               <div class="text-right">
                 <p class="text-lg font-semibold text-gray-900">
-                  {{ formatPrice(item.price * item.quantity) }} €
+                  {{ formatPrice(item.price * item.quantity, item) }}
                 </p>
                 <button (click)="removeItem(item)"
                         class="text-red-600 hover:text-red-800 text-sm font-medium mt-1 transition-colors">
@@ -164,7 +165,7 @@
         <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
           <div class="flex justify-between items-center">
             <span class="text-sm font-medium text-gray-900">Sous-total pour cet événement</span>
-            <span class="text-lg font-semibold text-gray-900">{{ formatPrice(group.subtotal) }} €</span>
+            <span class="text-lg font-semibold text-gray-900">{{ formatPrice(group.subtotal, group.items[0]) }}</span>
           </div>
         </div>
       </div>
@@ -181,7 +182,7 @@
           
           <div class="flex justify-between">
             <span class="text-gray-600">Prix moyen par photo</span>
-            <span class="font-medium">{{ formatPrice(cartStats.averagePrice) }} €</span>
+            <span class="font-medium">{{ formatPrice(cartStats.averagePrice) }}</span>
           </div>
           
           <div class="flex justify-between">
@@ -192,7 +193,7 @@
           <div class="border-t border-gray-200 pt-3">
             <div class="flex justify-between items-center">
               <span class="text-lg font-medium text-gray-900">Total</span>
-              <span class="text-2xl font-bold text-gray-900">{{ formatPrice(cartSummary.totalPrice) }} €</span>
+              <span class="text-2xl font-bold text-gray-900">{{ formatPrice(cartSummary.totalPrice) }}</span>
             </div>
           </div>
         </div>
@@ -246,7 +247,7 @@
         <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
           <p class="text-sm text-yellow-800">
             <strong>{{ cartSummary.totalItems }} photo(s)</strong> de <strong>{{ cartSummary.uniqueEvents }} événement(s)</strong> 
-            d'une valeur de <strong>{{ formatPrice(cartSummary.totalPrice) }}€</strong> seront supprimées.
+            d'une valeur de <strong>{{ formatPrice(cartSummary.totalPrice) }}</strong> seront supprimées.
           </p>
         </div>
         

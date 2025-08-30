@@ -1,20 +1,29 @@
 {
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ng serve",
-      "type": "chrome",
+      "name": "Launch Backend (.NET 8)",
+      "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "npm: start",
-      "url": "http://localhost:4200/"
+      "preLaunchTask": "build-backend",
+      "program": "${workspaceFolder}/../event-photo-back/EventPhoto.Presentation/bin/Debug/net8.0/EventPhoto.Presentation.dll",
+      "cwd": "${workspaceFolder}/../event-photo-back/EventPhoto.Presentation",
+      "stopAtEntry": false
     },
     {
-      "name": "ng test",
-      "type": "chrome",
+      "name": "Launch Frontend (ng serve)",
+      "type": "pwa-node",
       "request": "launch",
-      "preLaunchTask": "npm: test",
-      "url": "http://localhost:9876/debug.html"
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["ng", "serve"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Front + Back",
+      "configurations": ["Launch Backend (.NET 8)", "Launch Frontend (ng serve)"]
     }
   ]
 }

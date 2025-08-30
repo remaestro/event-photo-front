@@ -1,0 +1,23 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "../event-photo-back"
+        }
+    ],
+    "settings": {
+        "workbench.colorCustomizations": {
+            "titleBar.activeBackground": "#0B3D91",
+            "titleBar.activeForeground": "#FFFFFF",
+            "activityBar.background": "#1A4B8C",
+            "statusBar.background": "#0F2F7D",
+            "statusBar.foreground": "#FFFFFF",
+            "tab.activeBackground": "#1E50A2",
+            "tab.activeForeground": "#FFFFFF",
+            "tab.inactiveBackground": "#162E5A",
+            "tab.inactiveForeground": "#AAAAAA"
+        }
+    }
+}
