@@ -46,8 +46,12 @@ jobs:
           echo "Creating clean deployment directory"
           mkdir -p deploy
           cp -r dist/browser/* deploy/
+          # Copy the Azure Static Web Apps configuration file
+          cp public/staticwebapp.config.json deploy/
           echo "Contents of deployment directory:"
           ls -la deploy/
+          echo "Checking for staticwebapp.config.json:"
+          ls -la deploy/staticwebapp.config.json
           echo "Size of deployment directory:"
           du -sh deploy/
       - name: Install OIDC Client from Core Package
