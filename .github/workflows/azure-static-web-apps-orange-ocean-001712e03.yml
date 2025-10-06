@@ -46,6 +46,36 @@ jobs:
           echo "Creating clean deployment directory"
           mkdir -p deploy
           cp -r dist/browser/* deploy/
+          # Create Azure Static Web Apps configuration file if it doesn't exist
+          if [ ! -f "public/staticwebapp.config.json" ]; then
+            echo "Creating staticwebapp.config.json"
+            mkdir -p public
+            cat > public/staticwebapp.config.json << 'EOF'
+          {
+            "routes": [
+              {
+                "route": "/register*",
+                "serve": "/index.html",
+                "statusCode": 200
+              },
+              {
+                "route": "/*",
+                "serve": "/index.html",
+                "statusCode": 200
+              }
+            ],
+            "navigationFallback": {
+              "rewrite": "/index.html"
+            },
+            "responseOverrides": {
+              "404": {
+                "rewrite": "/index.html",
+                "statusCode": 200
+              }
+            }
+          }
+          EOF
+          fi
           # Copy the Azure Static Web Apps configuration file
           cp public/staticwebapp.config.json deploy/
           echo "Contents of deployment directory:"
