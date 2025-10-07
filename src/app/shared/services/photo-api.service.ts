@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { tap, catchError } from 'rxjs/operators';
 
 // Interfaces pour les réponses API
 export interface PhotoUrl {
@@ -121,6 +122,15 @@ export class PhotoApiService {
     sortBy: string = 'date',
     sortOrder: string = 'desc'
   ): Observable<MyPhotosResponse> {
+    // 🎯 LOG: Début de la requête API
+    console.log('🌐 [PHOTO_API] getMyPhotos - Début de la requête', {
+      page,
+      limit,
+      status,
+      sortBy,
+      sortOrder
+    });
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString())
@@ -131,12 +141,42 @@ export class PhotoApiService {
       params = params.set('status', status);
     }
 
-    return this.http.get<MyPhotosResponse>(
-      `${environment.apiUrl}/api/photos/my-photos`,
-      {
-        headers: this.getAuthHeaders(),
-        params
-      }
+    const headers = this.getAuthHeaders();
+    const apiUrl = `${environment.apiUrl}/api/photos/my-photos`;
+    
+    // 🎯 LOG: Configuration de la requête
+    console.log('🔧 [PHOTO_API] Configuration requête:', {
+      url: apiUrl,
+      hasToken: headers.has('Authorization'),
+      params: params.toString()
+    });
+
+    return this.http.get<MyPhotosResponse>(apiUrl, {
+      headers,
+      params
+    }).pipe(
+      tap(response => {
+        // 🎯 LOG: Réponse reçue avec succès
+        console.log('✅ [PHOTO_API] getMyPhotos - Succès:', {
+          totalEvents: response.totalEvents,
+          totalPhotos: response.totalPhotos,
+          eventsCount: response.events?.length || 0,
+          page: response.page,
+          limit: response.limit
+        });
+        console.log('📄 [PHOTO_API] Réponse complète:', response);
+      }),
+      catchError(error => {
+        // 🎯 LOG: Erreur de requête
+        console.error('💥 [PHOTO_API] getMyPhotos - Erreur:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url,
+          error: error.error
+        });
+        throw error;
+      })
     );
   }
 
