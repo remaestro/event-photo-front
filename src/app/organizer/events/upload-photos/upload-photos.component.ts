@@ -116,11 +116,8 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (event) => {
         this.event = event;
-        console.log('Event loaded successfully:', this.event);
       },
       error: (error) => {
-        console.error('Error loading event:', error);
-        alert('Événement non trouvé. Redirection vers la liste des événements.');
         this.router.navigate(['/organizer/events']);
       }
     });
@@ -363,9 +360,6 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
       try {
         photo.uploadStatus = 'uploading';
         
-        // 🎯 LOG: Début de l'upload
-        console.log(`🚀 [UPLOAD] Début upload pour ${photo.name} (${this.formatFileSize(photo.size)})`);
-        
         // Create FormData for the API call
         const formData = new FormData();
         formData.append('files', photo.file);
@@ -381,9 +375,6 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
             }
           };
           formData.append('metadata', JSON.stringify(metadata));
-          
-          // 🎯 LOG: Métadonnées ajoutées
-          console.log(`📝 [METADATA] Métadonnées ajoutées:`, metadata);
         }
 
         // Get auth token
@@ -391,20 +382,9 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
         let headers = new HttpHeaders();
         if (token) {
           headers = headers.set('Authorization', `Bearer ${token}`);
-          // 🎯 LOG: Token d'authentification
-          console.log(`🔑 [AUTH] Token présent:`, token.substring(0, 20) + '...');
-        } else {
-          console.warn(`⚠️ [AUTH] Aucun token d'authentification trouvé`);
         }
 
         const apiUrl = `${environment.apiUrl}/api/photo/upload/${this.eventId}`;
-        
-        // 🎯 LOG: URL et configuration de la requête
-        console.log(`🌐 [REQUEST] URL:`, apiUrl);
-        console.log(`📦 [REQUEST] FormData entries:`, Array.from(formData.entries()).map(([key, value]) => ({
-          key,
-          value: value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value
-        })));
 
         // Upload to backend API with proper HTTP event handling
         this.http.post<any>(
@@ -417,25 +397,15 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
           }
         ).subscribe({
           next: (event) => {
-            // 🎯 LOG: Tous les événements HTTP
-            console.log(`📡 [HTTP_EVENT] Type: ${event.type}`, event);
-            
             if (event.type === HttpEventType.UploadProgress) {
               // Handle upload progress
               const progressEvent = event as HttpProgressEvent;
               if (progressEvent.total) {
                 photo.uploadProgress = Math.round(100 * progressEvent.loaded / progressEvent.total);
-                
-                // 🎯 LOG: Progression de l'upload
-                console.log(`📊 [PROGRESS] ${photo.name}: ${photo.uploadProgress}% (${progressEvent.loaded}/${progressEvent.total})`);
               }
             } else if (event.type === HttpEventType.Response) {
               // Handle upload completion
               const responseEvent = event as HttpResponse<any>;
-              
-              // 🎯 LOG: Réponse complète reçue
-              console.log(`✅ [RESPONSE] Status: ${responseEvent.status}`, responseEvent);
-              console.log(`📄 [RESPONSE_BODY] Body:`, responseEvent.body);
               
               // Vérifier si la réponse indique un succès
               if (responseEvent.status >= 200 && responseEvent.status < 300) {
@@ -446,9 +416,6 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
                 if (responseEvent.body?.photos?.length > 0) {
                   const uploadedPhoto = responseEvent.body.photos[0];
                   photo.id = uploadedPhoto.photoId.toString();
-                  
-                  // 🎯 LOG: Photo ID reçu
-                  console.log(`🆔 [PHOTO_ID] Nouveau ID assigné: ${photo.id}`);
                 }
                 
                 if (this.uploadSession) {
@@ -456,14 +423,8 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
                   this.uploadSession.uploadedSize += photo.size;
                 }
                 
-                // 🎯 LOG: Upload marqué comme réussi
-                console.log(`🎉 [SUCCESS] Upload terminé avec succès pour ${photo.name}`);
-                
                 resolve(); // Resolve the promise when upload is complete
               } else {
-                // 🎯 LOG: Status code inattendu
-                console.error(`❌ [ERROR] Status code inattendu: ${responseEvent.status}`, responseEvent);
-                
                 photo.uploadStatus = 'error';
                 photo.errorMessage = `Erreur HTTP ${responseEvent.status}`;
                 
@@ -476,12 +437,6 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
             }
           },
           error: (error: any) => {
-            // 🎯 LOG: Erreur HTTP détaillée
-            console.error(`💥 [HTTP_ERROR] Erreur pour ${photo.name}:`, error);
-            console.error(`💥 [HTTP_ERROR] Status:`, error.status);
-            console.error(`💥 [HTTP_ERROR] Message:`, error.message);
-            console.error(`💥 [HTTP_ERROR] Error body:`, error.error);
-            
             photo.uploadStatus = 'error';
             photo.errorMessage = error?.error?.message || error?.message || 'Erreur lors de l\'upload';
             
@@ -494,9 +449,6 @@ export class UploadPhotosComponent implements OnInit, OnDestroy {
         });
         
       } catch (error: any) {
-        // 🎯 LOG: Erreur dans le try/catch
-        console.error(`🚨 [CATCH_ERROR] Erreur dans uploadSinglePhoto pour ${photo.name}:`, error);
-        
         photo.uploadStatus = 'error';
         photo.errorMessage = error?.error?.message || error?.message || 'Erreur lors de l\'upload';
         

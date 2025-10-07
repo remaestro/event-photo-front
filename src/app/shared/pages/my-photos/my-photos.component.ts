@@ -57,113 +57,45 @@ export class MyPhotosComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // 🎯 LOG: Initialisation du composant
-    console.log('🚀 [MY_PHOTOS_INIT] Initialisation du composant My Photos');
-    
     const currentUser = this.authService.getCurrentUser();
     this.userRole = currentUser?.role || null;
-    
-    // 🎯 LOG: Utilisateur connecté
-    console.log('👤 [USER_INFO] Utilisateur connecté:', {
-      userId: currentUser?.id,
-      email: currentUser?.email,
-      role: this.userRole,
-      isAuthenticated: this.authService.isAuthenticated()
-    });
-    
     this.loadMyPhotos();
   }
 
   private loadMyPhotos() {
-    // 🎯 LOG: Début du chargement
-    console.log('📁 [LOAD_START] Début du chargement des photos');
-    
     if (!this.authService.isAuthenticated()) {
-      console.warn('⚠️ [AUTH_ERROR] Utilisateur non authentifié, redirection vers login');
       this.router.navigate(['/login']);
       return;
     }
 
-    // 🎯 LOG: Paramètres de la requête API
     const sortBy = this.getSortBy();
     const sortOrder = this.getSortOrder();
-    console.log('🔧 [API_PARAMS] Paramètres de requête:', {
-      page: 1,
-      limit: 50,
-      sortBy,
-      sortOrder,
-      selectedFilter: this.selectedFilter,
-      selectedSort: this.selectedSort
-    });
-
-    // Utiliser l'API pour récupérer les vraies photos
-    console.log('🌐 [API_CALL] Appel à photoApiService.getMyPhotos...');
     
+    // Utiliser l'API pour récupérer les vraies photos
     this.photoApiService.getMyPhotos(1, 50, undefined, sortBy, sortOrder)
       .subscribe({
         next: (response) => {
-          // 🎯 LOG: Réponse API reçue avec détails
-          console.log('✅ [API_SUCCESS] Réponse API reçue:', {
-            totalEvents: response.totalEvents,
-            totalPhotos: response.totalPhotos,
-            eventsCount: response.events?.length || 0,
-            hasEvents: response.events && response.events.length > 0
-          });
-          
-          console.log('📊 [API_RESPONSE_DETAIL] Détail de la réponse:', response);
-          
           if (response.events && response.events.length > 0) {
-            // 🎯 LOG: Traitement des vraies photos
-            console.log('🔄 [MAPPING] Début du mapping des données API vers format local');
-            
             this.photosByEvent = this.mapApiResponseToLocal(response.events);
             this.totalPhotos = response.totalPhotos;
             this.totalEvents = response.totalEvents;
-            
-            // 🎯 LOG: Résultats du mapping
-            console.log('✅ [MAPPING_SUCCESS] Photos réelles chargées:', {
-              eventCount: this.photosByEvent.length,
-              totalPhotos: this.totalPhotos,
-              totalEvents: this.totalEvents,
-              firstEventPhotos: this.photosByEvent[0]?.photos?.length || 0
-            });
-            
-            console.log('📋 [PHOTOS_DETAIL] Détail des photos chargées:', this.photosByEvent);
           } else {
-            // 🎯 LOG: Aucune photo trouvée
-            console.log('📭 [NO_PHOTOS] Aucune photo trouvée dans la réponse API, utilisation des données mockées');
             this.loadMockData();
           }
           
           this.isLoading = false;
-          console.log('🏁 [LOAD_COMPLETE] Chargement terminé avec succès');
         },
         error: (error) => {
-          // 🎯 LOG: Erreur API détaillée
-          console.error('💥 [API_ERROR] Erreur lors du chargement des photos:', {
-            message: error.message,
-            status: error.status,
-            statusText: error.statusText,
-            url: error.url,
-            error: error.error
-          });
-          
-          console.error('🔍 [ERROR_DETAIL] Détail complet de l\'erreur:', error);
+          console.error('Erreur lors du chargement des photos:', error);
           
           // En cas d'erreur, revenir aux données mockées pour le développement
-          console.log('🔄 [FALLBACK] Fallback vers les données mockées');
           this.loadMockData();
           this.isLoading = false;
-          
-          console.log('🏁 [LOAD_COMPLETE_ERROR] Chargement terminé avec erreur (fallback appliqué)');
         }
       });
   }
 
   private loadMockData() {
-    // Données mockées de fallback en cas d'erreur API
-    console.log('Chargement des données mockées (fallback)');
-    
     if (this.userRole === 'Organizer') {
       // Simuler les photos d'organisateur basées sur les événements réels
       this.photosByEvent = [

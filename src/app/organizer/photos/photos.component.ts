@@ -86,6 +86,7 @@ export class PhotosComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
       switchMap(params => {
         this.eventId = params['eventId'];
+        
         if (this.eventId) {
           return this.loadEventAndPhotos();
         } else {
@@ -95,6 +96,9 @@ export class PhotosComponent implements OnInit, OnDestroy {
         }
       })
     ).subscribe({
+      next: (result) => {
+        // Chargement terminé
+      },
       error: (error) => {
         console.error('Error in ngOnInit:', error);
         this.isLoading = false;
@@ -126,7 +130,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
         return { event, photos };
       }),
       catchError(error => {
-        console.error('Error loading event and photos:', error);
         this.isLoading = false;
         alert('Erreur lors du chargement de l\'événement');
         this.router.navigate(['/organizer/events']);
@@ -136,45 +139,62 @@ export class PhotosComponent implements OnInit, OnDestroy {
   }
 
   private loadEvent(headers: HttpHeaders) {
-    return this.http.get<any>(`${environment.apiUrl}/api/events/${this.eventId}`, { headers }).pipe(
-      map(eventData => ({
-        id: eventData.id,
-        name: eventData.name || eventData.title,
-        date: eventData.date,
-        location: eventData.location,
-        status: this.mapApiStatusToLocal(eventData.status),
-        photosCount: eventData.stats?.totalPhotos || 0
-      })),
+    const eventUrl = `${environment.apiUrl}/api/events/${this.eventId}`;
+
+    return this.http.get<any>(eventUrl, { headers }).pipe(
+      map(eventData => {
+        const mappedEvent = {
+          id: eventData.id,
+          name: eventData.name || eventData.title,
+          date: eventData.date,
+          location: eventData.location,
+          status: this.mapApiStatusToLocal(eventData.status),
+          photosCount: eventData.stats?.totalPhotos || 0
+        };
+
+        return mappedEvent;
+      }),
       catchError(error => {
-        console.error('Error loading event:', error);
         throw error;
       })
     );
   }
 
   private loadPhotos(headers: HttpHeaders) {
-    return this.http.get<any>(`${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`, { headers }).pipe(
-      map(response => response.photos.map((photo: any) => ({
-        id: photo.id,
-        filename: photo.filename,
-        originalName: photo.filename,
-        size: photo.fileSize || 0,
-        uploadDate: photo.uploadDate,
-        status: this.mapPhotoStatus(photo.status),
-        progress: 100,
-        thumbnailUrl: this.imageUrlService.getThumbnailUrl(photo.id),    // Use ImageUrlService
-        watermarkUrl: this.imageUrlService.getWatermarkedUrl(photo.id),  // Use ImageUrlService
-        tags: photo.tags || [],
-        metadata: {
-          width: photo.dimensions?.width || 0,
-          height: photo.dimensions?.height || 0,
-          camera: photo.metadata?.camera,
-          location: photo.metadata?.location
+    const photosUrl = `${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`;
+
+    return this.http.get<any>(photosUrl, { headers }).pipe(
+      map(response => {
+        if (!response.photos || response.photos.length === 0) {
+          return [];
         }
-      }))),
+
+        const mappedPhotos = response.photos.map((photo: any) => {
+          const mappedPhoto = {
+            id: photo.id,
+            filename: photo.filename,
+            originalName: photo.filename,
+            size: photo.fileSize || 0,
+            uploadDate: photo.uploadDate,
+            status: this.mapPhotoStatus(photo.status),
+            progress: 100,
+            thumbnailUrl: this.imageUrlService.getThumbnailUrl(photo.id),
+            watermarkUrl: this.imageUrlService.getWatermarkedUrl(photo.id),
+            tags: photo.tags || [],
+            metadata: {
+              width: photo.dimensions?.width || 0,
+              height: photo.dimensions?.height || 0,
+              camera: photo.metadata?.camera,
+              location: photo.metadata?.location
+            }
+          };
+
+          return mappedPhoto;
+        });
+
+        return mappedPhotos;
+      }),
       catchError(error => {
-        console.error('Error loading photos:', error);
-        // Return empty array instead of throwing to allow partial success
         return of([]);
       })
     );
@@ -290,7 +310,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
         this.http.delete(`${environment.apiUrl}/api/photo/${photoId}`, { headers }).pipe(
           map(() => ({ photoId, success: true })),
           catchError(error => {
-            console.error(`Error deleting photo ${photoId}:`, error);
             return of({ photoId, success: false, error });
           })
         )
@@ -319,7 +338,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error in bulk delete:', error);
           alert('Erreur lors de la suppression groupée des photos');
         }
       });
@@ -335,7 +353,6 @@ export class PhotosComponent implements OnInit, OnDestroy {
         .pipe(
           takeUntil(this.destroy$),
           catchError(error => {
-            console.error('Error deleting photo:', error);
             alert(`Erreur lors de la suppression de la photo: ${error.error?.message || error.message || 'Erreur inconnue'}`);
             return of(null);
           })
