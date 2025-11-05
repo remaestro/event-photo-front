@@ -31,6 +31,16 @@ export const routes: Routes = [
   { path: 'register', loadComponent: () => import('./auth/register/register.component').then(c => c.RegisterComponent) },
   { path: 'role-selection', loadComponent: () => import('./auth/role-selection/role-selection.component').then(c => c.RoleSelectionComponent) },
   
+  // Pages de paiement Wave
+  { 
+    path: 'payment-success', 
+    loadComponent: () => import('./pages/payment-success.component').then(c => c.PaymentSuccessComponent)
+  },
+  { 
+    path: 'payment-cancel', 
+    loadComponent: () => import('./pages/payment-cancel.component').then(c => c.PaymentCancelComponent)
+  },
+  
   // Profil utilisateur - accessible à tous les utilisateurs connectés
   { 
     path: 'profile', 

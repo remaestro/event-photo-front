@@ -13,6 +13,7 @@ export interface CartItem {
   quantity: number;
   format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20';
   addedAt: string;
+  currency?: string; // NOUVEAU : Ajouter la devise
 }
 
 export interface Cart {

@@ -234,25 +234,31 @@ export class ScanResultsComponent implements OnInit {
 
     this.isLoading = true;
     try {
-      // Utiliser le CartService au lieu de localStorage
+      // Utiliser la nouvelle API simplifiée du CartService
+      // Le service récupérera automatiquement les bonnes données d'événement (prix, devise)
       const cartItems = selectedPhotos.map(photo => ({
         photoId: photo.id,
         eventId: photo.eventId,
-        eventName: this.eventData?.name || `Événement ${photo.eventId}`, // Use event name from data
-        photoUrl: photo.imageUrl,
-        photoThumbnail: photo.thumbnail, // Use photoThumbnail instead of thumbnail
-        price: photo.price,
-        quantity: 1, // Added quantity property
-        currency: this.eventCurrency // Add currency from event
+        format: 'digital' as const // Format par défaut
       }));
 
-      this.cartService.addMultipleToCart(cartItems);
-      
-      await this.delay(500);
-      this.router.navigate(['/cart']);
+      this.cartService.addMultipleToCart(cartItems).subscribe({
+        next: async (success) => {
+          if (success) {
+            await this.delay(500);
+            this.router.navigate(['/cart']);
+          } else {
+            console.error('Error adding items to cart');
+          }
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error adding to cart:', error);
+          this.isLoading = false;
+        }
+      });
     } catch (error) {
       console.error('Error adding to cart:', error);
-    } finally {
       this.isLoading = false;
     }
   }

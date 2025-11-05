@@ -1,94 +1,114 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface WavePaymentRequest {
-  items: any[];
-  customerInfo: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  metadata: any;
+export interface WaveCheckoutRequest {
+  amount: number;
+  orderId?: string;
+  eventId?: number;
+  customerEmail?: string;
+  successUrl?: string;
+  cancelUrl?: string;
 }
 
-export interface WavePaymentResponse {
+export interface WaveCheckoutResponse {
   success: boolean;
-  paymentId: string;
-  paymentUrl?: string;
-  qrCode?: string;
-  amount: number;
-  currency: string;
-  expiresAt?: string;
-  message?: string;
+  checkoutUrl?: string;
+  sessionId?: string;
+  error?: string;
+  details?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class WavePaymentService {
-  private readonly apiUrl = environment.apiUrl || 'http://localhost:5000';
+  private readonly baseUrl = `${environment.apiUrl}/api/wavepayment`;
 
   constructor(private http: HttpClient) {}
 
-  initiatePayment(items: any[], customerInfo: any, metadata: any): Observable<WavePaymentResponse> {
-    // Pour le moment, on simule une réponse Wave
-    // En production, ceci ferait un appel à l'API Wave
-    
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    const mockResponse: WavePaymentResponse = {
-      success: true,
-      paymentId: `WAVE_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-      paymentUrl: `https://checkout.wave.com/pay/${Date.now()}`,
-      qrCode: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`,
-      amount: totalAmount,
-      currency: 'XOF',
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-      message: 'Paiement Wave initié avec succès'
-    };
-
-    console.log('🌊 Wave Payment Service - Initiating payment:', {
-      items: items.length,
-      amount: totalAmount,
-      customer: customerInfo.name,
-      paymentId: mockResponse.paymentId
-    });
-
-    // Simuler un délai réseau
-    return new Observable(observer => {
-      setTimeout(() => {
-        observer.next(mockResponse);
-        observer.complete();
-      }, 1000);
+  /**
+   * Créer une session de checkout Wave via notre backend
+   */
+  createCheckoutSession(request: WaveCheckoutRequest): Observable<WaveCheckoutResponse> {
+    return this.http.post<WaveCheckoutResponse>(`${this.baseUrl}/create-checkout`, {
+      Amount: request.amount,  // Majuscule pour .NET
+      OrderId: request.orderId || this.generateOrderId(),
+      EventId: request.eventId,
+      CustomerEmail: request.customerEmail,
+      SuccessUrl: request.successUrl || `${window.location.origin}/payment-success`,
+      CancelUrl: request.cancelUrl || `${window.location.origin}/payment-cancel`
     });
   }
 
-  checkPaymentStatus(paymentId: string): Observable<{ status: string; transactionId?: string }> {
-    // Simulation du statut de paiement
-    const mockStatus = {
-      status: Math.random() > 0.3 ? 'completed' : 'pending',
-      transactionId: `TXN_${Date.now()}`
-    };
-
-    console.log('🌊 Wave Payment Service - Checking status:', paymentId, mockStatus);
-
-    return of(mockStatus);
+  /**
+   * Vérifier le statut d'une session de checkout
+   */
+  getCheckoutSession(sessionId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/session/${sessionId}`);
   }
 
-  // En production, cette méthode ferait des appels réels à l'API Wave
-  private makeWaveAPICall(endpoint: string, data: any): Observable<any> {
-    const waveApiUrl = 'https://api.wave.com/v1';
-    
-    // Utiliser les clés d'environment seulement si elles existent
-    const waveApiKey = (environment as any).waveApiKey || 'test_key';
-    
-    const headers = {
-      'Authorization': `Bearer ${waveApiKey}`,
-      'Content-Type': 'application/json'
-    };
+  /**
+   * Obtenir le statut d'un paiement
+   */
+  getPaymentStatus(paymentId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/payment/${paymentId}/status`);
+  }
 
-    return this.http.post(`${waveApiUrl}/${endpoint}`, data, { headers });
+  /**
+   * Générer un ID de commande unique
+   */
+  private generateOrderId(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `ORDER_${timestamp}_${random}`;
+  }
+
+  /**
+   * Méthode legacy pour compatibilité - redirige vers la nouvelle méthode
+   * @deprecated Utiliser createCheckoutSession() à la place
+   */
+  async initiatePayment(
+    cartItems: any[], 
+    customerInfo: { name: string; email: string; phone: string }, 
+    orderInfo: { orderId: string }
+  ): Promise<{ success: boolean; paymentId?: string; checkoutUrl?: string }> {
+    try {
+      console.warn('⚠️ initiatePayment() est dépréciée, utilisez createCheckoutSession()');
+      
+      // Calculer le montant total
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Récupérer l'ID de l'événement depuis le premier item
+      const eventId = cartItems.length > 0 ? parseInt(cartItems[0].eventId) : undefined;
+
+      const checkoutRequest: WaveCheckoutRequest = {
+        amount: totalAmount,
+        orderId: orderInfo.orderId,
+        eventId: eventId,
+        customerEmail: customerInfo.email
+      };
+
+      const response = await this.createCheckoutSession(checkoutRequest).toPromise();
+
+      if (response?.success && response.checkoutUrl) {
+        return {
+          success: true,
+          paymentId: response.sessionId,
+          checkoutUrl: response.checkoutUrl
+        };
+      } else {
+        console.error('Wave checkout failed:', response?.error);
+        return {
+          success: false
+        };
+      }
+    } catch (error) {
+      console.error('Wave payment initiation failed:', error);
+      return {
+        success: false
+      };
+    }
   }
 }

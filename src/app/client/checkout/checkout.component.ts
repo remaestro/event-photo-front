@@ -66,18 +66,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   
   paymentMethods: PaymentMethod[] = [
     {
-      id: 'stripe',
-      name: 'Carte bancaire',
-      icon: '💳',
-      description: 'Visa, Mastercard, American Express'
-    },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      icon: '🅿️',
-      description: 'Paiement sécurisé via PayPal'
-    },
-    {
       id: 'wave',
       name: 'Wave',
       icon: '📱',
@@ -85,7 +73,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   ];
 
-  selectedPaymentMethod = 'stripe';
+  selectedPaymentMethod = 'wave';
   isProcessing = false;
   showPaymentForm = false;
   orderSummary: OrderSummary = {
@@ -95,9 +83,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     total: 0,
     itemCount: 0
   };
-
-  stripeElements: any;
-  cardElement: any;
 
   constructor() {
     this.checkoutForm = this.fb.group({
@@ -109,10 +94,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       address: ['', Validators.required],
       city: ['', Validators.required],
       postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
-      country: ['France', Validators.required],
+      country: ['Senegal', Validators.required], // Changer le pays par défaut pour Wave
       
-      // Payment
-      paymentMethod: ['stripe', Validators.required],
+      // Payment - Wave par défaut
+      paymentMethod: ['wave', Validators.required],
       
       // Terms
       acceptTerms: [false, Validators.requiredTrue],
@@ -131,8 +116,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.eventCurrency = summary.items[0].currency || 'EUR';
       }
     });
-    
-    this.loadStripe();
   }
 
   ngOnDestroy() {
@@ -143,9 +126,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   calculateOrderSummary() {
     const subtotal = this.cartSummary.totalPrice || this.cartSummary.total || 0;
-    const tax = subtotal * 0.20; // 20% VAT
-    const processing = 1.50; // Fixed processing fee
-    const total = subtotal + tax + processing;
+    const tax = 0; // Pas de TVA pour l'instant
+    const processing = 0; // Pas de frais de traitement pour l'instant
+    const total = subtotal; // Total = Sous-total (sans frais supplémentaires)
 
     this.orderSummary = {
       subtotal,
@@ -159,17 +142,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   onPaymentMethodChange(method: string) {
     this.selectedPaymentMethod = method;
     this.checkoutForm.patchValue({ paymentMethod: method });
-  }
-
-  loadStripe() {
-    // In a real app, you would load Stripe.js here
-    // const stripe = Stripe('pk_test_...');
-    console.log('Loading Stripe...');
-  }
-
-  setupStripeElements() {
-    // In a real app, you would setup Stripe Elements here
-    console.log('Setting up Stripe Elements...');
   }
 
   async processPayment() {
@@ -192,11 +164,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         country: this.checkoutForm.value.country
       };
 
-      if (this.selectedPaymentMethod === 'stripe') {
-        await this.processStripePayment(billingInfo);
-      } else if (this.selectedPaymentMethod === 'paypal') {
-        await this.processPayPalPayment(billingInfo);
-      } else if (this.selectedPaymentMethod === 'wave') {
+      if (this.selectedPaymentMethod === 'wave') {
         await this.processWavePayment(billingInfo);
       }
     } catch (error) {
@@ -207,67 +175,36 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   }
 
-  async processStripePayment(billingInfo: BillingInfo) {
-    // Simulate Stripe payment processing
-    console.log('Processing Stripe payment...', billingInfo);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simulate successful payment
-    const paymentResult = {
-      success: true,
-      paymentIntentId: 'pi_' + Math.random().toString(36).substr(2, 9),
-      amount: this.orderSummary.total * 100, // cents
-      currency: 'eur'
-    };
-
-    if (paymentResult.success) {
-      this.completeOrder(paymentResult.paymentIntentId, 'stripe');
-    }
-  }
-
-  async processPayPalPayment(billingInfo: BillingInfo) {
-    // Simulate PayPal payment processing
-    console.log('Processing PayPal payment...', billingInfo);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Simulate successful payment
-    const paymentResult = {
-      success: true,
-      transactionId: 'txn_' + Math.random().toString(36).substr(2, 9),
-      amount: this.orderSummary.total,
-      currency: 'EUR'
-    };
-
-    if (paymentResult.success) {
-      this.completeOrder(paymentResult.transactionId, 'paypal');
-    }
-  }
-
   async processWavePayment(billingInfo: BillingInfo) {
     try {
-      console.log('Processing Wave payment...', billingInfo);
+      console.log('Processing Wave payment with billing info:', billingInfo);
       
-      // Utiliser le service Wave existant avec gestion d'erreur
-      const waveResponse = await this.wavePaymentService.initiatePayment(
-        this.cartSummary.items,
-        {
-          name: `${billingInfo.firstName} ${billingInfo.lastName}`,
-          email: billingInfo.email,
-          phone: billingInfo.phone
-        },
-        { orderId: `ORDER_${Date.now()}` }
-      ).toPromise();
+      // Préparer les données pour la nouvelle API Wave backend
+      const checkoutRequest = {
+        amount: this.orderSummary.total,
+        orderId: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        eventId: this.cartSummary.items[0]?.eventId ? parseInt(this.cartSummary.items[0].eventId) : undefined,
+        customerEmail: billingInfo.email,
+        successUrl: `${window.location.origin}/payment-success`,
+        cancelUrl: `${window.location.origin}/payment-cancel`
+      };
+
+      console.log('Sending Wave checkout request:', checkoutRequest);
+
+      // Appeler le nouveau service Wave
+      const waveResponse = await this.wavePaymentService.createCheckoutSession(checkoutRequest).toPromise();
       
-      // Vérification stricte de la réponse
-      if (waveResponse && waveResponse.success && waveResponse.paymentId) {
-        // Créer la commande avec les données Wave
-        this.completeOrder(waveResponse.paymentId, 'wave');
+      console.log('Wave response received:', waveResponse);
+      
+      // Vérifier la réponse Wave
+      if (waveResponse && waveResponse.success && waveResponse.checkoutUrl) {
+        console.log('Wave checkout session created successfully:', waveResponse.sessionId);
+        
+        // Rediriger vers Wave Checkout
+        window.location.href = waveResponse.checkoutUrl;
       } else {
-        throw new Error('Wave payment initiation failed');
+        console.error('Wave checkout failed - Response:', waveResponse);
+        throw new Error('Échec de la création de la session Wave: ' + (waveResponse?.error || 'Erreur inconnue'));
       }
       
     } catch (error) {
@@ -326,38 +263,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.isProcessing = false;
       }
     });
-  }
-
-  private sendOrderConfirmationEmail(orderData: any) {
-    // Simulate email sending
-    console.log('📧 Sending order confirmation email to:', orderData.billing.email);
-    console.log('Order details:', {
-      orderId: orderData.id,
-      total: orderData.summary.total,
-      itemCount: orderData.summary.itemCount
-    });
-    
-    // In a real app, this would call an email service
-    // emailService.sendOrderConfirmation(orderData);
-  }
-
-  private generateInvoice(orderData: any) {
-    // Simulate invoice generation
-    console.log('📄 Generating invoice for order:', orderData.id);
-    
-    const invoice = {
-      invoiceNumber: 'INV-' + orderData.id,
-      orderDate: orderData.date,
-      customerInfo: orderData.billing,
-      items: orderData.items,
-      summary: orderData.summary,
-      paymentMethod: orderData.paymentMethod,
-      transactionId: orderData.transactionId
-    };
-    
-    // Store invoice (in real app, generate PDF and send via email)
-    localStorage.setItem(`invoice_${orderData.id}`, JSON.stringify(invoice));
-    console.log('Invoice generated and stored');
   }
 
   private markFormGroupTouched() {

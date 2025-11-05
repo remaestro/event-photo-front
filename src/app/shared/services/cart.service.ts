@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map, catchError, tap } from 'rxjs/operators';
+import { delay, map, catchError, tap, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import { CartDataService, Cart as ApiCart, AddCartItemRequest } from './cart-data.service';
+import { EventsDataService } from './events-data.service';
+import { environment } from '../../../environments/environment';
 
 export interface CartItem {
   id: string;
@@ -13,10 +16,10 @@ export interface CartItem {
   price: number;
   quantity: number;
   addedAt: string;
-  currency?: string; // Devise de l'événement
-  photographer?: string; // Add for backward compatibility
-  timestamp?: string; // Add for backward compatibility
-  thumbnail?: string; // Add for backward compatibility (alias for photoThumbnail)
+  currency: string; // Toujours requis maintenant
+  photographer?: string;
+  timestamp?: string;
+  thumbnail?: string; // Alias pour photoThumbnail
 }
 
 export interface CartSummary {
@@ -24,10 +27,10 @@ export interface CartSummary {
   subtotal: number;
   tax: number;
   total: number;
-  items: CartItem[]; // Make non-optional for backward compatibility
-  totalItems: number; // Make non-optional for backward compatibility (alias for itemCount)
-  totalPrice: number; // Make non-optional for backward compatibility (alias for total)
-  uniqueEvents: number; // Make non-optional for backward compatibility
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+  uniqueEvents: number;
 }
 
 export interface CartStats {
@@ -35,9 +38,9 @@ export interface CartStats {
   totalValue: number;
   averageItemPrice: number;
   lastAddedItem?: CartItem;
-  oldestItem?: Date; // Keep optional for backward compatibility
-  totalPhotos: number; // Make non-optional for backward compatibility (alias for totalItems)
-  averagePrice: number; // Make non-optional for backward compatibility (alias for averageItemPrice)
+  oldestItem?: Date;
+  totalPhotos: number;
+  averagePrice: number;
 }
 
 @Injectable({
@@ -52,37 +55,37 @@ export class CartService {
     subtotal: 0,
     tax: 0,
     total: 0,
-    items: [], // Initialize as empty array
-    totalItems: 0, // Initialize as 0
-    totalPrice: 0, // Initialize as 0
-    uniqueEvents: 0 // Initialize as 0
+    items: [],
+    totalItems: 0,
+    totalPrice: 0,
+    uniqueEvents: 0
   });
   public cartSummary$ = this.cartSummarySubject.asObservable();
 
-  constructor(private cartDataService: CartDataService) {
+  constructor(
+    private cartDataService: CartDataService,
+    private eventsDataService: EventsDataService,
+    private http: HttpClient
+  ) {
     this.loadCart();
   }
 
   /**
-   * Charger le panier - now uses real API with better error handling
+   * Charger le panier depuis l'API
    */
   loadCart(): void {
-    // Remove auth token check - allow anonymous carts
-    // const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-    
-    // if (!token) {
-    //   console.log('No auth token found, using empty cart');
-    //   // User not logged in, use empty cart
-    //   this.cartItemsSubject.next([]);
-    //   this.updateCartSummary();
-    //   return;
-    // }
-
     this.cartDataService.getCart().pipe(
       catchError((error) => {
-        console.warn('Cart API call failed:', error);
-        // Fallback to mock implementation for any errors
-        return this.loadCartMock();
+        console.warn('Cart API call failed, using empty cart:', error);
+        return of({
+          id: 'empty-cart',
+          items: [],
+          totals: { subtotal: 0, tax: 0, total: 0 },
+          itemCount: 0,
+          totalItems: 0,
+          totalPrice: 0,
+          updatedAt: new Date().toISOString()
+        });
       })
     ).subscribe(apiCart => {
       const items = this.mapApiCartToLocal(apiCart);
@@ -92,14 +95,14 @@ export class CartService {
   }
 
   /**
-   * Ajouter un item au panier - now uses real API
+   * Ajouter un item au panier - maintenant simplifié car le backend calcule les prix
    */
-  addItem(photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity: number = 1, currency: string = 'EUR', format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
+  addItem(photoId: string, eventId: string, format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
     const request: AddCartItemRequest = {
-      photoId: photoId.toString(), // S'assurer que c'est une string
-      quantity,
+      photoId: photoId.toString(),
+      quantity: 1,
       format,
-      productType: format, // Ajouter productType qui correspond au format
+      productType: format,
       customizations: undefined
     };
 
@@ -110,9 +113,124 @@ export class CartService {
         this.updateCartSummary();
         return true;
       }),
+      catchError((error) => {
+        console.error('Error adding item to cart:', error);
+        // Fallback: essayer de récupérer les données d'événement pour le mock
+        return this.getEventDetails(eventId).pipe(
+          switchMap(eventData => {
+            const price = this.calculatePrice(eventData, format);
+            const currency = eventData.currency || 'EUR';
+            return this.addItemDirect(photoId, eventId, eventData.name, price, currency);
+          }),
+          catchError(() => of(false))
+        );
+      })
+    );
+  }
+
+  /**
+   * Ajouter plusieurs items au panier
+   */
+  addMultipleToCart(items: Array<{photoId: string, eventId: string, format?: string}>): Observable<boolean> {
+    // Regrouper par événement pour optimiser les appels API
+    const eventGroups = new Map<string, any[]>();
+    items.forEach(item => {
+      if (!eventGroups.has(item.eventId)) {
+        eventGroups.set(item.eventId, []);
+      }
+      eventGroups.get(item.eventId)!.push(item);
+    });
+
+    const addPromises = Array.from(eventGroups.entries()).map(([eventId, eventItems]) => 
+      this.getEventDetails(eventId).pipe(
+        switchMap(eventData => {
+          const addItemPromises = eventItems.map(item => 
+            this.addItem(item.photoId, item.eventId, item.format as any || 'digital').toPromise()
+          );
+          return Promise.all(addItemPromises);
+        })
+      ).toPromise()
+    );
+
+    return new Observable(observer => {
+      Promise.all(addPromises).then(() => {
+        observer.next(true);
+        observer.complete();
+      }).catch(() => {
+        observer.next(false);
+        observer.complete();
+      });
+    });
+  }
+
+  /**
+   * Récupérer les détails d'un événement
+   */
+  private getEventDetails(eventId: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/api/events/${eventId}`).pipe(
       catchError(() => {
-        // Fallback to mock implementation
-        return this.addItemMock(photoId, eventId, eventName, photoUrl, photoThumbnail, price, quantity, currency);
+        console.warn(`Failed to load event ${eventId}, using defaults`);
+        return of({
+          id: eventId,
+          name: `Événement ${eventId}`,
+          photoPrice: 5.99,
+          currency: 'EUR'
+        });
+      })
+    );
+  }
+
+  /**
+   * Calculer le prix selon le format
+   */
+  private calculatePrice(eventData: any, format: string): number {
+    const basePrice = eventData.photoPrice || 5.99;
+    
+    switch (format) {
+      case 'digital':
+        return basePrice;
+      case 'print_4x6':
+        return basePrice + 2.00;
+      case 'print_8x10':
+        return basePrice + 5.00;
+      case 'print_16x20':
+        return basePrice + 15.00;
+      default:
+        return basePrice;
+    }
+  }
+
+  /**
+   * Ajouter un item directement (fallback)
+   */
+  private addItemDirect(photoId: string, eventId: string, eventName: string, price: number, currency: string): Observable<boolean> {
+    return of(null).pipe(
+      delay(200),
+      map(() => {
+        const currentItems = this.cartItemsSubject.value;
+        const existingItemIndex = currentItems.findIndex(item => item.photoId === photoId);
+
+        if (existingItemIndex >= 0) {
+          currentItems[existingItemIndex].quantity += 1;
+        } else {
+          const newItem: CartItem = {
+            id: 'item_' + Date.now(),
+            photoId,
+            eventId,
+            eventName,
+            photoUrl: `${environment.apiUrl}/api/photo/${photoId}/serve?quality=watermarked`,
+            photoThumbnail: `${environment.apiUrl}/api/photo/${photoId}/serve?quality=thumbnail`,
+            price,
+            quantity: 1,
+            currency,
+            addedAt: new Date().toISOString()
+          };
+          currentItems.push(newItem);
+        }
+
+        this.cartItemsSubject.next([...currentItems]);
+        this.updateCartSummary();
+        return true;
       })
     );
   }
@@ -250,34 +368,6 @@ export class CartService {
   }
 
   /**
-   * Ajouter plusieurs items au panier
-   */
-  addMultipleToCart(items: Array<{photoId: string, eventId: string, eventName: string, photoUrl: string, photoThumbnail: string, price: number, quantity?: number, currency?: string}>): Observable<boolean> {
-    const addPromises = items.map(item => 
-      this.addItem(
-        item.photoId,
-        item.eventId,
-        item.eventName,
-        item.photoUrl,
-        item.photoThumbnail,
-        item.price,
-        item.quantity || 1,
-        item.currency || 'EUR'
-      ).toPromise()
-    );
-
-    return new Observable(observer => {
-      Promise.all(addPromises).then(() => {
-        observer.next(true);
-        observer.complete();
-      }).catch(() => {
-        observer.next(false);
-        observer.complete();
-      });
-    });
-  }
-
-  /**
    * Obtenir les statistiques du panier
    */
   getCartStats(): Observable<CartStats> {
@@ -316,22 +406,22 @@ export class CartService {
       photoId: apiItem.photoId,
       eventId: apiItem.eventId,
       eventName: apiItem.eventName,
-      photoUrl: apiItem.photoThumbnail, // API might need to include full URL
-      photoThumbnail: apiItem.photoThumbnail,
+      photoUrl: `${environment.apiUrl}/api/photo/${apiItem.photoId}/serve?quality=watermarked`,
+      photoThumbnail: apiItem.photoThumbnail || `${environment.apiUrl}/api/photo/${apiItem.photoId}/serve?quality=thumbnail`,
       price: apiItem.price,
       quantity: apiItem.quantity,
+      currency: apiItem.currency || 'EUR', // Utiliser la devise du backend
       addedAt: apiItem.addedAt,
-      thumbnail: apiItem.photoThumbnail, // Alias for backward compatibility
-      photographer: undefined, // Would need to come from API
-      timestamp: apiItem.addedAt // Alias for backward compatibility
+      thumbnail: apiItem.photoThumbnail,
+      timestamp: apiItem.addedAt
     }));
   }
 
   private updateCartSummary(): void {
     const items = this.cartItemsSubject.value;
     const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.20; // 20% TVA
-    const total = subtotal + tax;
+    const tax = 0; // Pas de TVA pour l'instant
+    const total = subtotal; // Total = Sous-total (sans taxe)
     const itemCount = items.reduce((count, item) => count + item.quantity, 0);
     const uniqueEvents = new Set(items.map(item => item.eventId)).size;
 

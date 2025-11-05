@@ -70,28 +70,54 @@ export class CartComponent implements OnInit, OnDestroy {
   // Augmenter la quantité d'un article
   increaseQuantity(item: CartItem): void {
     this.isUpdatingQuantity = true;
-    this.cartService.updateQuantity(item.photoId, item.quantity + 1);
-    this.lastAction = `Quantité augmentée pour ${item.photoId}`;
-    setTimeout(() => {
-      this.isUpdatingQuantity = false;
-      this.lastAction = '';
-    }, 1000);
+    this.cartService.updateQuantity(item.photoId, item.quantity + 1).subscribe({
+      next: (success) => {
+        if (success) {
+          this.lastAction = `Quantité augmentée pour ${item.photoId}`;
+        } else {
+          this.lastAction = `Erreur lors de la mise à jour de ${item.photoId}`;
+        }
+        setTimeout(() => {
+          this.isUpdatingQuantity = false;
+          this.lastAction = '';
+        }, 1000);
+      },
+      error: (error) => {
+        console.error('Error updating quantity:', error);
+        this.isUpdatingQuantity = false;
+        this.lastAction = 'Erreur lors de la mise à jour';
+        setTimeout(() => this.lastAction = '', 1000);
+      }
+    });
   }
 
   // Diminuer la quantité d'un article
   decreaseQuantity(item: CartItem): void {
     this.isUpdatingQuantity = true;
     if (item.quantity > 1) {
-      this.cartService.updateQuantity(item.photoId, item.quantity - 1);
-      this.lastAction = `Quantité diminuée pour ${item.photoId}`;
+      this.cartService.updateQuantity(item.photoId, item.quantity - 1).subscribe({
+        next: (success) => {
+          if (success) {
+            this.lastAction = `Quantité diminuée pour ${item.photoId}`;
+          } else {
+            this.lastAction = `Erreur lors de la mise à jour de ${item.photoId}`;
+          }
+          setTimeout(() => {
+            this.isUpdatingQuantity = false;
+            this.lastAction = '';
+          }, 1000);
+        },
+        error: (error) => {
+          console.error('Error updating quantity:', error);
+          this.isUpdatingQuantity = false;
+          this.lastAction = 'Erreur lors de la mise à jour';
+          setTimeout(() => this.lastAction = '', 1000);
+        }
+      });
     } else {
       this.removeItem(item);
       return;
     }
-    setTimeout(() => {
-      this.isUpdatingQuantity = false;
-      this.lastAction = '';
-    }, 1000);
   }
 
   // Mettre à jour la quantité directement
@@ -108,28 +134,64 @@ export class CartComponent implements OnInit, OnDestroy {
     if (quantity === 0) {
       this.removeItem(item);
     } else {
-      this.cartService.updateQuantity(item.photoId, quantity);
-      this.lastAction = `Quantité mise à jour pour ${item.photoId}`;
+      this.cartService.updateQuantity(item.photoId, quantity).subscribe({
+        next: (success) => {
+          if (success) {
+            this.lastAction = `Quantité mise à jour pour ${item.photoId}`;
+          } else {
+            this.lastAction = `Erreur lors de la mise à jour de ${item.photoId}`;
+          }
+          setTimeout(() => {
+            this.isUpdatingQuantity = false;
+            this.lastAction = '';
+          }, 1000);
+        },
+        error: (error) => {
+          console.error('Error updating quantity:', error);
+          this.isUpdatingQuantity = false;
+          this.lastAction = 'Erreur lors de la mise à jour';
+          setTimeout(() => this.lastAction = '', 1000);
+        }
+      });
     }
-    
-    setTimeout(() => {
-      this.isUpdatingQuantity = false;
-      this.lastAction = '';
-    }, 1000);
   }
 
   // Retirer un article du panier
   removeItem(item: CartItem): void {
-    this.cartService.removeFromCart(item.photoId);
-    this.lastAction = `Photo ${item.photoId} supprimée du panier`;
-    setTimeout(() => this.lastAction = '', 3000);
+    this.cartService.removeFromCart(item.photoId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.lastAction = `Photo ${item.photoId} supprimée du panier`;
+        } else {
+          this.lastAction = `Erreur lors de la suppression de ${item.photoId}`;
+        }
+        setTimeout(() => this.lastAction = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error removing item:', error);
+        this.lastAction = 'Erreur lors de la suppression';
+        setTimeout(() => this.lastAction = '', 3000);
+      }
+    });
   }
 
   // Retirer tous les articles d'un événement
   removeEventItems(eventId: string, eventName: string): void {
-    this.cartService.removeEventItems(eventId);
-    this.lastAction = `Toutes les photos de ${eventName} supprimées`;
-    setTimeout(() => this.lastAction = '', 3000);
+    this.cartService.removeEventItems(eventId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.lastAction = `Toutes les photos de ${eventName} supprimées`;
+        } else {
+          this.lastAction = `Erreur lors de la suppression des photos de ${eventName}`;
+        }
+        setTimeout(() => this.lastAction = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error removing event items:', error);
+        this.lastAction = 'Erreur lors de la suppression';
+        setTimeout(() => this.lastAction = '', 3000);
+      }
+    });
   }
 
   // Afficher la confirmation pour vider le panier
@@ -144,10 +206,27 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Confirmer et vider le panier
   confirmClearCart(): void {
-    this.cartService.clearCart();
-    this.showClearConfirmation = false;
-    this.lastAction = 'Panier vidé avec succès';
-    setTimeout(() => this.lastAction = '', 3000);
+    this.isLoading = true;
+    this.cartService.clearCart().subscribe({
+      next: (success) => {
+        if (success) {
+          this.showClearConfirmation = false;
+          this.lastAction = 'Panier vidé avec succès';
+          setTimeout(() => this.lastAction = '', 3000);
+        } else {
+          this.lastAction = 'Erreur lors du vidage du panier';
+          setTimeout(() => this.lastAction = '', 3000);
+        }
+      },
+      error: (error) => {
+        console.error('Error clearing cart:', error);
+        this.lastAction = 'Erreur lors du vidage du panier';
+        setTimeout(() => this.lastAction = '', 3000);
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 
   // Continuer les achats

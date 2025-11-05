@@ -1,8 +1,10 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080', 
+  apiUrl: 'http://localhost:8080', // Retour au port 8080 comme indiqué dans les logs
   cdnUrl: 'http://localhost:3000',
   stripePublicKey: 'pk_test_development_key_here',
+  waveApiKey: 'wave_ci_prod_AEkC8Ur43z5wqy8so3nw2B6AvoUD1udbZilvKNP-Jzv0mtP1hnKNzE6QtZU3NzLtY_MEepDWvvz803Xauuu9hw4wK4nTya0KAA',
+  waveBaseUrl: 'https://api.wave.com',
   faceRecognitionApiUrl: 'http://localhost:8080',
   websocketUrl: 'ws://localhost:8080/hub', 
   fileUpload: {

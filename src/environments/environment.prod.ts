@@ -3,6 +3,8 @@ export const environment = {
   apiUrl: 'https://event-photo-api-gwc2evhsdmf0f7eh.westeurope-01.azurewebsites.net',
   cdnUrl: 'https://cdn.eventphoto.com',
   stripePublicKey: 'pk_live_production_key_here',
+  waveApiKey: 'wave_ci_prod_AEkC8Ur43z5wqy8so3nw2B6AvoUD1udbZilvKNP-Jzv0mtP1hnKNzE6QtZU3NzLtY_MEepDWvvz803Xauuu9hw4wK4nTya0KAA',
+  waveBaseUrl: 'https://api.wave.com',
   faceRecognitionApiUrl: 'https://face-api.eventphoto.com',
   websocketUrl: 'wss://event-photo-api-gwc2evhsdmf0f7eh.westeurope-01.azurewebsites.net/hub',
   fileUpload: {

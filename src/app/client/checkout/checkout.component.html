@@ -333,12 +333,14 @@
               <span class="font-medium">{{ formatCurrency(orderSummary.subtotal) }}</span>
             </div>
             
-            <div class="flex justify-between text-sm">
+            <!-- Afficher la TVA seulement si elle est supérieure à 0 -->
+            <div *ngIf="orderSummary.tax > 0" class="flex justify-between text-sm">
               <span class="text-gray-600">TVA (20%)</span>
               <span class="font-medium">{{ formatCurrency(orderSummary.tax) }}</span>
             </div>
             
-            <div class="flex justify-between text-sm">
+            <!-- Afficher les frais de traitement seulement s'ils sont supérieurs à 0 -->
+            <div *ngIf="orderSummary.processing > 0" class="flex justify-between text-sm">
               <span class="text-gray-600">Frais de traitement</span>
               <span class="font-medium">{{ formatCurrency(orderSummary.processing) }}</span>
             </div>
@@ -388,7 +390,7 @@
               </span>
             </div>
             <p class="text-xs text-gray-400">
-              Paiements traités par Stripe, PayPal et Wave
+              Paiements traités de manière sécurisée par Wave
             </p>
           </div>
         </div>
