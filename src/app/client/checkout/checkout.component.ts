@@ -177,9 +177,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   async processWavePayment(billingInfo: BillingInfo) {
     try {
-      console.log('Processing Wave payment with billing info:', billingInfo);
-      
-      // Préparer les données pour la nouvelle API Wave backend
+      if (!this.cartSummary.items || this.cartSummary.items.length === 0) {
+        throw new Error('Panier vide - impossible de procéder au paiement');
+      }
+
+      if (this.orderSummary.total <= 0) {
+        throw new Error('Montant invalide - impossible de procéder au paiement');
+      }
+
       const checkoutRequest = {
         amount: this.orderSummary.total,
         orderId: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -189,26 +194,24 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         cancelUrl: `${window.location.origin}/payment-cancel`
       };
 
-      console.log('Sending Wave checkout request:', checkoutRequest);
-
-      // Appeler le nouveau service Wave
       const waveResponse = await this.wavePaymentService.createCheckoutSession(checkoutRequest).toPromise();
       
-      console.log('Wave response received:', waveResponse);
-      
-      // Vérifier la réponse Wave
       if (waveResponse && waveResponse.success && waveResponse.checkoutUrl) {
-        console.log('Wave checkout session created successfully:', waveResponse.sessionId);
-        
-        // Rediriger vers Wave Checkout
         window.location.href = waveResponse.checkoutUrl;
       } else {
-        console.error('Wave checkout failed - Response:', waveResponse);
-        throw new Error('Échec de la création de la session Wave: ' + (waveResponse?.error || 'Erreur inconnue'));
+        let errorMessage = 'Erreur inconnue';
+        if (waveResponse?.error) {
+          errorMessage = waveResponse.error;
+        } else if (!waveResponse?.success) {
+          errorMessage = 'La session de paiement n\'a pas pu être créée';
+        } else if (!waveResponse?.checkoutUrl) {
+          errorMessage = 'URL de paiement manquante';
+        }
+        
+        throw new Error('Échec de la création de la session Wave: ' + errorMessage);
       }
       
     } catch (error) {
-      console.error('Wave payment failed:', error);
       throw error;
     }
   }
@@ -249,8 +252,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     // Appeler l'API pour créer la commande en base de données
     this.ordersDataService.createOrder(orderData).subscribe({
       next: (createdOrder) => {
-        console.log('📦 Order created successfully:', createdOrder);
-        
         // Clear cart
         this.cartService.clearCart();
 
@@ -258,7 +259,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.router.navigate(['/order-confirmation', createdOrder.id]);
       },
       error: (error) => {
-        console.error('❌ Failed to create order:', error);
         alert('Erreur lors de la création de la commande. Veuillez réessayer.');
         this.isProcessing = false;
       }

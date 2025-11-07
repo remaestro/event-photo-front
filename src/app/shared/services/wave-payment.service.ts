@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface WaveCheckoutRequest {
@@ -32,14 +33,16 @@ export class WavePaymentService {
    * Créer une session de checkout Wave via notre backend
    */
   createCheckoutSession(request: WaveCheckoutRequest): Observable<WaveCheckoutResponse> {
-    return this.http.post<WaveCheckoutResponse>(`${this.baseUrl}/create-checkout`, {
+    const apiRequest = {
       Amount: request.amount,  // Majuscule pour .NET
       OrderId: request.orderId || this.generateOrderId(),
       EventId: request.eventId,
       CustomerEmail: request.customerEmail,
       SuccessUrl: request.successUrl || `${window.location.origin}/payment-success`,
       CancelUrl: request.cancelUrl || `${window.location.origin}/payment-cancel`
-    });
+    };
+
+    return this.http.post<WaveCheckoutResponse>(`${this.baseUrl}/create-checkout`, apiRequest);
   }
 
   /**
