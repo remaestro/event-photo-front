@@ -9,6 +9,8 @@ export interface WaveCheckoutRequest {
   orderId?: string;
   eventId?: number;
   customerEmail?: string;
+  customerName?: string; // 🆕 Nom du client
+  photoIds?: number[]; // 🆕 IDs des photos spécifiques achetées
   successUrl?: string;
   cancelUrl?: string;
 }
@@ -38,6 +40,8 @@ export class WavePaymentService {
       OrderId: request.orderId || this.generateOrderId(),
       EventId: request.eventId,
       CustomerEmail: request.customerEmail,
+      CustomerName: request.customerName, // 🆕 Nom du client
+      PhotoIds: request.photoIds, // 🆕 IDs des photos spécifiques
       SuccessUrl: request.successUrl || `${window.location.origin}/payment-success`,
       CancelUrl: request.cancelUrl || `${window.location.origin}/payment-cancel`
     };

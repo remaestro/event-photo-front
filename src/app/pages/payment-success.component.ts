@@ -75,6 +75,31 @@ import { environment } from '../../environments/environment';
               </div>
             </div>
           </div>
+
+          <!-- 🆕 Access to photos section -->
+          <div *ngIf="paymentVerified" class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div class="flex items-center mb-3">
+              <svg class="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <h3 class="text-lg font-medium text-blue-900">Accès à vos photos</h3>
+            </div>
+            <p class="text-sm text-blue-700 mb-4">
+              Pour accéder aux photos que vous venez d'acheter, vous devez créer un compte ou vous connecter.
+            </p>
+            <div class="space-y-2">
+              <button 
+                (click)="registerToAccessPhotos()"
+                class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                📸 Créer un compte et voir mes photos
+              </button>
+              <button 
+                (click)="loginToAccessPhotos()"
+                class="w-full bg-white text-blue-600 border border-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors">
+                🔑 J'ai déjà un compte
+              </button>
+            </div>
+          </div>
           
           <!-- Manual email confirmation -->
           <div *ngIf="!emailConfirmed && !isVerifying" class="mb-6">
@@ -95,12 +120,6 @@ import { environment } from '../../environments/environment';
           
           <!-- Action buttons -->
           <div class="space-y-3">
-            <button 
-              (click)="goToOrderConfirmation()"
-              class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Voir mes photos
-            </button>
-            
             <button 
               (click)="goToEvents()"
               class="w-full bg-gray-200 text-gray-800 py-3 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors">
@@ -210,8 +229,41 @@ export class PaymentSuccessComponent implements OnInit {
     }
   }
 
-  goToOrderConfirmation() {
-    this.router.navigate(['/my-purchases']);
+  // 🆕 Nouvelles méthodes pour l'accès aux photos
+  registerToAccessPhotos() {
+    // Stocker le sessionId pour le récupérer après l'inscription
+    if (this.sessionId) {
+      localStorage.setItem('pendingPhotoAccess', JSON.stringify({
+        sessionId: this.sessionId,
+        timestamp: Date.now()
+      }));
+    }
+    
+    // Rediriger vers l'inscription avec un paramètre spécial
+    this.router.navigate(['/auth/register'], { 
+      queryParams: { 
+        redirectTo: 'my-purchases',
+        reason: 'photo-access'
+      } 
+    });
+  }
+
+  loginToAccessPhotos() {
+    // Stocker le sessionId pour le récupérer après la connexion
+    if (this.sessionId) {
+      localStorage.setItem('pendingPhotoAccess', JSON.stringify({
+        sessionId: this.sessionId,
+        timestamp: Date.now()
+      }));
+    }
+    
+    // Rediriger vers la connexion avec un paramètre spécial
+    this.router.navigate(['/auth/login'], { 
+      queryParams: { 
+        redirectTo: 'my-purchases',
+        reason: 'photo-access'
+      } 
+    });
   }
 
   goToEvents() {

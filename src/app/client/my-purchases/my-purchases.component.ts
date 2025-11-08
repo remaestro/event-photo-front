@@ -1,31 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-
-interface PurchaseItem {
-  photoId: string;
-  eventId: string;
-  eventName: string;
-  photoUrl: string;
-  thumbnail: string;
-  price: number;
-  quantity: number;
-  photographer?: string;
-  timestamp?: string;
-  downloadUrl?: string;
-}
-
-interface Purchase {
-  id: string;
-  transactionId: string;
-  paymentMethod: string;
-  items: PurchaseItem[];
-  billing: any;
-  summary: any;
-  date: Date;
-  status: string;
-  downloadExpiresAt?: Date;
-}
+import { PhotoPurchaseService, PhotoPurchase } from '../../shared/services/photo-purchase.service';
+import { AuthService } from '../../shared/services/auth.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-my-purchases',
@@ -34,48 +12,61 @@ interface Purchase {
   styleUrl: './my-purchases.component.css'
 })
 export class MyPurchasesComponent implements OnInit {
-  purchases: Purchase[] = [];
+  purchases: PhotoPurchase[] = [];
   isLoading = true;
-  selectedPurchase: Purchase | null = null;
+  selectedPurchase: PhotoPurchase | null = null;
   downloadingItems: Set<string> = new Set();
   showInvoiceModal = false;
   selectedInvoice: any = null;
   filterStatus: 'all' | 'active' | 'expired' = 'all';
   sortBy: 'date' | 'amount' | 'items' = 'date';
   sortOrder: 'asc' | 'desc' = 'desc';
+  userEmail: string | null = null;
+  noAccessMessage = '';
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private photoPurchaseService: PhotoPurchaseService,
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
   ngOnInit() {
+    this.checkUserAccess();
+  }
+
+  private checkUserAccess() {
+    // Vérifier si l'utilisateur est connecté
+    if (!this.authService.isAuthenticated()) {
+      this.noAccessMessage = 'Vous devez être connecté pour voir vos achats.';
+      this.isLoading = false;
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.email) {
+      this.noAccessMessage = 'Impossible de récupérer vos informations utilisateur.';
+      this.isLoading = false;
+      return;
+    }
+
+    this.userEmail = currentUser.email;
     this.loadPurchases();
+
+    // S'abonner aux changements d'achats
+    this.photoPurchaseService.purchases$.subscribe(purchases => {
+      this.purchases = purchases;
+      this.isLoading = false;
+    });
   }
 
   private loadPurchases() {
-    try {
-      // Load purchases from localStorage (in real app, fetch from backend)
-      const storedPurchases = localStorage.getItem('userOrders');
-      if (storedPurchases) {
-        this.purchases = JSON.parse(storedPurchases).map((purchase: any) => ({
-          ...purchase,
-          date: new Date(purchase.date),
-          downloadExpiresAt: this.calculateExpiryDate(new Date(purchase.date))
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading purchases:', error);
-    } finally {
-      this.isLoading = false;
-    }
+    if (!this.userEmail) return;
+
+    this.photoPurchaseService.loadUserPurchases(this.userEmail);
   }
 
-  private calculateExpiryDate(purchaseDate: Date): Date {
-    // Downloads available for 6 months
-    const expiryDate = new Date(purchaseDate);
-    expiryDate.setMonth(expiryDate.getMonth() + 6);
-    return expiryDate;
-  }
-
-  get filteredPurchases(): Purchase[] {
+  get filteredPurchases(): PhotoPurchase[] {
     let filtered = [...this.purchases];
 
     // Apply status filter
@@ -91,13 +82,13 @@ export class MyPurchasesComponent implements OnInit {
       
       switch (this.sortBy) {
         case 'date':
-          comparison = a.date.getTime() - b.date.getTime();
+          comparison = new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
           break;
         case 'amount':
-          comparison = a.summary.total - b.summary.total;
+          comparison = a.totalAmount - b.totalAmount;
           break;
         case 'items':
-          comparison = a.items.length - b.items.length;
+          comparison = a.photos.length - b.photos.length;
           break;
       }
 
@@ -107,54 +98,64 @@ export class MyPurchasesComponent implements OnInit {
     return filtered;
   }
 
-  isDownloadActive(purchase: Purchase): boolean {
-    return purchase.downloadExpiresAt ? new Date() < purchase.downloadExpiresAt : false;
+  isDownloadActive(purchase: PhotoPurchase): boolean {
+    return new Date() < new Date(purchase.downloadExpiresAt);
   }
 
-  getDaysUntilExpiry(purchase: Purchase): number {
-    if (!purchase.downloadExpiresAt) return 0;
+  getDaysUntilExpiry(purchase: PhotoPurchase): number {
     const now = new Date();
-    const diffTime = purchase.downloadExpiresAt.getTime() - now.getTime();
+    const expiryDate = new Date(purchase.downloadExpiresAt);
+    const diffTime = expiryDate.getTime() - now.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  async downloadPhoto(item: PurchaseItem, purchase: Purchase) {
+  async downloadPhoto(photo: any, purchase: PhotoPurchase) {
     if (!this.isDownloadActive(purchase)) {
-      alert('La période de téléchargement pour cette commande a expiré.');
+      this.notificationService.warning(
+        'Téléchargement expiré',
+        'La période de téléchargement pour cette commande a expiré.'
+      );
       return;
     }
 
-    const downloadKey = `${purchase.id}_${item.photoId}`;
+    const downloadKey = `${purchase.id}_${photo.id}`;
     this.downloadingItems.add(downloadKey);
 
     try {
-      // Simulate download process
-      await this.delay(1500);
+      const response = await this.photoPurchaseService.downloadPhoto(purchase.id, photo.id).toPromise();
       
-      // In a real app, this would fetch the high-resolution image without watermark
-      const response = await fetch(item.photoUrl);
-      const blob = await response.blob();
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `photo-${item.photoId}-${purchase.id}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      if (response) {
+        // Créer un lien de téléchargement avec l'URL fournie par l'API
+        const link = document.createElement('a');
+        link.href = (response as any).downloadUrl;
+        link.download = `photo-${photo.id}-${purchase.id}.jpg`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.notificationService.success(
+          'Téléchargement réussi',
+          'La photo a été téléchargée avec succès.'
+        );
+      }
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Erreur lors du téléchargement. Veuillez réessayer.');
+      this.notificationService.error(
+        'Erreur de téléchargement',
+        'Erreur lors du téléchargement. Veuillez réessayer.'
+      );
     } finally {
       this.downloadingItems.delete(downloadKey);
     }
   }
 
-  async downloadAllPhotos(purchase: Purchase) {
+  async downloadAllPhotos(purchase: PhotoPurchase) {
     if (!this.isDownloadActive(purchase)) {
-      alert('La période de téléchargement pour cette commande a expiré.');
+      this.notificationService.warning(
+        'Téléchargement expiré',
+        'La période de téléchargement pour cette commande a expiré.'
+      );
       return;
     }
 
@@ -162,23 +163,35 @@ export class MyPurchasesComponent implements OnInit {
     this.downloadingItems.add(downloadKey);
 
     try {
-      // Simulate batch download
-      await this.delay(2000);
+      const response = await this.photoPurchaseService.downloadAllPhotos(purchase.id).toPromise();
       
-      // In a real app, this would create a ZIP file with all photos
-      for (const item of purchase.items) {
-        await this.downloadPhoto(item, purchase);
-        await this.delay(500); // Small delay between downloads
+      if (response) {
+        // Créer un lien de téléchargement pour le ZIP
+        const link = document.createElement('a');
+        link.href = (response as any).downloadUrl;
+        link.download = `photos-${purchase.eventName}-${purchase.id}.zip`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.notificationService.success(
+          'Téléchargement groupé réussi',
+          'Toutes les photos ont été téléchargées avec succès.'
+        );
       }
     } catch (error) {
       console.error('Batch download failed:', error);
-      alert('Erreur lors du téléchargement groupé. Veuillez réessayer.');
+      this.notificationService.error(
+        'Erreur de téléchargement groupé',
+        'Erreur lors du téléchargement groupé. Veuillez réessayer.'
+      );
     } finally {
       this.downloadingItems.delete(downloadKey);
     }
   }
 
-  viewPurchaseDetails(purchase: Purchase) {
+  viewPurchaseDetails(purchase: PhotoPurchase) {
     this.selectedPurchase = purchase;
   }
 
@@ -186,36 +199,54 @@ export class MyPurchasesComponent implements OnInit {
     this.selectedPurchase = null;
   }
 
-  showInvoice(purchase: Purchase) {
-    try {
-      const invoice = localStorage.getItem(`invoice_${purchase.id}`);
-      if (invoice) {
-        this.selectedInvoice = JSON.parse(invoice);
-        this.showInvoiceModal = true;
-      } else {
-        alert('Facture non disponible pour cette commande.');
-      }
-    } catch (error) {
-      console.error('Error loading invoice:', error);
-      alert('Erreur lors du chargement de la facture.');
-    }
+  showInvoice(purchase: PhotoPurchase) {
+    // Créer une facture simulée pour l'affichage
+    this.selectedInvoice = {
+      id: purchase.id,
+      purchaseDate: purchase.purchaseDate,
+      customerEmail: purchase.customerEmail,
+      eventName: purchase.eventName,
+      totalAmount: purchase.totalAmount,
+      currency: purchase.currency,
+      items: purchase.photos.map(photo => ({
+        name: `Photo ${photo.id}`,
+        price: photo.price,
+        quantity: 1
+      }))
+    };
+    this.showInvoiceModal = true;
   }
 
-  downloadInvoice(purchase: Purchase) {
+  downloadInvoice(purchase: PhotoPurchase) {
     try {
-      const invoice = localStorage.getItem(`invoice_${purchase.id}`);
-      if (invoice) {
-        const blob = new Blob([invoice], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `facture-${purchase.id}.json`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      }
+      const invoice = {
+        id: purchase.id,
+        purchaseDate: purchase.purchaseDate,
+        customerEmail: purchase.customerEmail,
+        eventName: purchase.eventName,
+        totalAmount: purchase.totalAmount,
+        currency: purchase.currency,
+        items: purchase.photos
+      };
+      
+      const blob = new Blob([JSON.stringify(invoice, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `facture-${purchase.id}.json`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      this.notificationService.success(
+        'Facture téléchargée',
+        'La facture a été téléchargée avec succès.'
+      );
     } catch (error) {
       console.error('Error downloading invoice:', error);
-      alert('Erreur lors du téléchargement de la facture.');
+      this.notificationService.error(
+        'Erreur de téléchargement',
+        'Erreur lors du téléchargement de la facture.'
+      );
     }
   }
 
@@ -238,7 +269,13 @@ export class MyPurchasesComponent implements OnInit {
   }
 
   goToEvents() {
-    this.router.navigate(['/events/search']);
+    this.router.navigate(['/event-access']);
+  }
+
+  goToLogin() {
+    this.router.navigate(['/auth/login'], {
+      queryParams: { redirectTo: 'client/my-purchases' }
+    });
   }
 
   isDownloading(itemId: string, purchaseId: string): boolean {
@@ -249,11 +286,11 @@ export class MyPurchasesComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'XOF'
     }).format(amount);
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | string): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
@@ -263,12 +300,14 @@ export class MyPurchasesComponent implements OnInit {
     });
   }
 
-  formatDateShort(date: Date): string {
+  formatDateShort(date: Date | string): string {
     return new Date(date).toLocaleDateString('fr-FR');
   }
 
   getPaymentMethodName(method: string): string {
     switch (method) {
+      case 'wave':
+        return 'Wave';
       case 'stripe':
         return 'Carte bancaire';
       case 'paypal':
@@ -278,7 +317,7 @@ export class MyPurchasesComponent implements OnInit {
     }
   }
 
-  getStatusColor(purchase: Purchase): string {
+  getStatusColor(purchase: PhotoPurchase): string {
     if (this.isDownloadActive(purchase)) {
       const daysLeft = this.getDaysUntilExpiry(purchase);
       if (daysLeft <= 7) return 'text-orange-600';
@@ -287,7 +326,7 @@ export class MyPurchasesComponent implements OnInit {
     return 'text-red-600';
   }
 
-  getStatusText(purchase: Purchase): string {
+  getStatusText(purchase: PhotoPurchase): string {
     if (this.isDownloadActive(purchase)) {
       const daysLeft = this.getDaysUntilExpiry(purchase);
       if (daysLeft <= 0) return 'Expiré';
@@ -304,6 +343,26 @@ export class MyPurchasesComponent implements OnInit {
 
   getExpiredPurchasesCount(): number {
     return this.purchases.filter(p => !this.isDownloadActive(p)).length;
+  }
+
+  // 🆕 Vérifier l'accès en attente après connexion
+  checkPendingAccess() {
+    const sessionId = this.photoPurchaseService.checkPendingAccess();
+    if (sessionId && this.userEmail) {
+      this.photoPurchaseService.associatePurchaseToUser(sessionId, this.userEmail).subscribe({
+        next: () => {
+          this.photoPurchaseService.clearPendingAccess();
+          this.loadPurchases();
+          this.notificationService.success(
+            'Photos associées !',
+            'Vos photos achetées ont été associées à votre compte.'
+          );
+        },
+        error: (error) => {
+          console.error('Error associating pending purchase:', error);
+        }
+      });
+    }
   }
 
   private delay(ms: number): Promise<void> {

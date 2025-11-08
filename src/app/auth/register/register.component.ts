@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService, RegisterRequest } from '../../shared/services/auth.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { InvitationService } from '../../shared/services/invitation.service';
+import { PhotoPurchaseService } from '../../shared/services/photo-purchase.service';
 
 // Custom validator for password confirmation
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -31,12 +32,16 @@ export class RegisterComponent implements OnInit {
   isLoading = false;
   registrationSuccess = false;
   
-  // 🎯 Nouvelles propriétés pour les invitations
+  // 🎯 Propriétés pour les invitations
   invitationToken: string | null = null;
   eventId: string | null = null;
   invitationInfo: any = null;
   isInvitedUser = false;
   isValidatingInvitation = false;
+
+  // 🆕 Propriétés pour l'accès aux photos
+  isPhotoAccessFlow = false;
+  pendingSessionId: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -44,14 +49,26 @@ export class RegisterComponent implements OnInit {
     private notificationService: NotificationService,
     private router: Router,
     private route: ActivatedRoute,
-    private invitationService: InvitationService
+    private invitationService: InvitationService,
+    private photoPurchaseService: PhotoPurchaseService
   ) {
     this.registerForm = this.createForm();
   }
 
   ngOnInit(): void {
-    // 🎯 Détecter les paramètres d'invitation
+    // 🎯 Détecter les paramètres d'invitation et d'accès aux photos
     this.route.queryParams.subscribe(params => {
+      // Vérifier si c'est un flow d'accès aux photos
+      const reason = params['reason'];
+      this.isPhotoAccessFlow = reason === 'photo-access';
+      
+      // Récupérer le sessionId en attente si applicable
+      if (this.isPhotoAccessFlow) {
+        this.pendingSessionId = this.photoPurchaseService.checkPendingAccess();
+        // Pour l'accès aux photos, pas besoin de sélectionner un rôle administratif
+        this.selectedRole = null;
+      }
+
       // Vérifier s'il y a un token d'invitation
       if (params['invitation'] && params['eventId']) {
         this.invitationToken = params['invitation'];
@@ -151,7 +168,8 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid || !this.selectedRole) {
+    // Pour l'accès aux photos, pas besoin de rôle administratif
+    if (this.registerForm.invalid || (!this.selectedRole && !this.isPhotoAccessFlow)) {
       this.markFormGroupTouched();
       return;
     }
@@ -165,7 +183,7 @@ export class RegisterComponent implements OnInit {
       confirmPassword: formValue.confirmPassword,
       firstName: formValue.firstName.trim(),
       lastName: formValue.lastName.trim(),
-      role: this.selectedRole,
+      role: this.selectedRole || 'organizer', // Rôle par défaut pour l'accès aux photos
       agreeToTerms: formValue.agreeToTerms
     };
 
@@ -177,12 +195,17 @@ export class RegisterComponent implements OnInit {
           // 🎯 Si c'est un utilisateur invité, accepter automatiquement l'invitation
           if (this.isInvitedUser && this.invitationToken && response.user?.id) {
             this.acceptInvitation(response.user.id);
-          } else {
+          } 
+          // 🆕 Si c'est un flow d'accès aux photos, associer l'achat
+          else if (this.isPhotoAccessFlow && this.pendingSessionId && response.user?.email) {
+            this.associatePhotosPurchase(response.user.email);
+          } 
+          else {
             this.handleNormalRegistration();
           }
           
           // Track the registration for analytics
-          this.trackRegistration(this.selectedRole!);
+          this.trackRegistration(this.selectedRole || 'organizer');
           
         } else {
           this.isLoading = false;
@@ -242,7 +265,60 @@ export class RegisterComponent implements OnInit {
   }
 
   /**
-   * 📝 Gérer l'inscription normale (sans invitation)
+   * 🆕 Associer l'achat de photos au nouveau compte utilisateur
+   */
+  private async associatePhotosPurchase(userEmail: string): Promise<void> {
+    if (!this.pendingSessionId) {
+      this.handleNormalRegistration();
+      return;
+    }
+
+    try {
+      // Associer l'achat à l'utilisateur nouvellement inscrit
+      await this.photoPurchaseService.associatePurchaseToUser(this.pendingSessionId, userEmail).toPromise();
+      
+      // Nettoyer l'accès en attente
+      this.photoPurchaseService.clearPendingAccess();
+      
+      // Charger les achats de l'utilisateur
+      this.photoPurchaseService.loadUserPurchases(userEmail);
+      
+      this.isLoading = false;
+      
+      this.notificationService.success(
+        'Compte créé et photos associées !',
+        'Votre compte a été créé et vos photos achetées sont maintenant disponibles.'
+      );
+      
+      // Rediriger vers les achats après un court délai
+      setTimeout(() => {
+        this.router.navigate(['/client/my-purchases']);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error associating purchase to new user:', error);
+      
+      this.isLoading = false;
+      
+      this.notificationService.warning(
+        'Compte créé',
+        'Votre compte a été créé mais l\'association avec vos photos a échoué. Contactez le support si nécessaire.'
+      );
+      
+      // Redirection vers la connexion pour réessayer l'association
+      setTimeout(() => {
+        this.router.navigate(['/auth/login'], { 
+          queryParams: { 
+            redirectTo: 'my-purchases',
+            reason: 'photo-access'
+          } 
+        });
+      }, 2000);
+    }
+  }
+
+  /**
+   * 📝 Gérer l'inscription normale (sans invitation ni achat)
    */
   private handleNormalRegistration(): void {
     this.isLoading = false;
@@ -292,7 +368,7 @@ export class RegisterComponent implements OnInit {
     return this.selectedRole === 'organizer' ? '📸' : '🛡️';
   }
 
-  // 🎯 Nouvelles méthodes d'aide pour l'UI
+  // 🎯 Méthodes d'aide pour l'UI d'invitation
   getInvitationDisplayText(): string {
     if (!this.invitationInfo) return '';
     
@@ -310,10 +386,43 @@ export class RegisterComponent implements OnInit {
     return hoursUntilExpiration <= 24; // Expire dans moins de 24h
   }
 
+  // 🆕 Méthodes d'aide pour l'UI d'accès aux photos
+  shouldShowRoleSelection(): boolean {
+    // Ne pas montrer la sélection de rôle pour l'accès aux photos
+    return !this.isPhotoAccessFlow && !this.isInvitedUser;
+  }
+
+  getPageTitle(): string {
+    if (this.isPhotoAccessFlow) {
+      return 'Créer un compte pour accéder à vos photos';
+    }
+    if (this.isInvitedUser) {
+      return 'Créer un compte pour rejoindre l\'événement';
+    }
+    return 'Inscription';
+  }
+
+  getPageDescription(): string {
+    if (this.isPhotoAccessFlow) {
+      return 'Créez votre compte pour voir et télécharger les photos que vous venez d\'acheter.';
+    }
+    if (this.isInvitedUser && this.invitationInfo) {
+      return `Vous êtes invité à rejoindre l'événement "${this.invitationInfo.eventName}".`;
+    }
+    return 'Choisissez votre rôle et créez votre compte EventPhoto.';
+  }
+
   /**
    * 🔄 Rediriger vers la page de connexion
    */
   goToLogin() {
-    this.router.navigate(['/login']);
+    const queryParams: any = {};
+    
+    if (this.isPhotoAccessFlow) {
+      queryParams.redirectTo = 'my-purchases';
+      queryParams.reason = 'photo-access';
+    }
+    
+    this.router.navigate(['/auth/login'], { queryParams });
   }
 }

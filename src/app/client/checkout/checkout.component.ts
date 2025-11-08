@@ -167,8 +167,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       if (this.selectedPaymentMethod === 'wave') {
         await this.processWavePayment(billingInfo);
       }
-    } catch (error) {
-      console.error('Payment failed:', error);
+    } catch (error: any) {
+      console.error('Payment failed:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || 'No stack trace',
+        name: error?.name || 'Error'
+      });
       alert('Le paiement a échoué. Veuillez réessayer.');
     } finally {
       this.isProcessing = false;
@@ -185,14 +189,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         throw new Error('Montant invalide - impossible de procéder au paiement');
       }
 
+      // 🆕 Récupérer les IDs des photos spécifiques du panier
+      const photoIds = this.cartSummary.items.map(item => parseInt(item.photoId));
+      const customerName = `${billingInfo.firstName} ${billingInfo.lastName}`.trim();
+
       const checkoutRequest = {
         amount: this.orderSummary.total,
         orderId: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         eventId: this.cartSummary.items[0]?.eventId ? parseInt(this.cartSummary.items[0].eventId) : undefined,
         customerEmail: billingInfo.email,
+        customerName: customerName, // 🆕 Nom complet du client
+        photoIds: photoIds, // 🆕 IDs des photos spécifiques achetées
         successUrl: `${window.location.origin}/payment-success`,
         cancelUrl: `${window.location.origin}/payment-cancel`
       };
+
+      console.log('🛒 [CHECKOUT] Sending Wave request with photos:', {
+        photoIds,
+        customerName,
+        amount: this.orderSummary.total,
+        orderId: checkoutRequest.orderId
+      });
 
       const waveResponse = await this.wavePaymentService.createCheckoutSession(checkoutRequest).toPromise();
       

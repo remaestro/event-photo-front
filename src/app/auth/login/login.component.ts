@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService, LoginRequest } from '../../shared/services/auth.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { PhotoPurchaseService } from '../../shared/services/photo-purchase.service';
 
 @Component({
   selector: 'app-login',
@@ -18,13 +19,16 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   defaultAccounts: Array<{email: string, password: string, role: string}> = [];
   returnUrl = '/';
+  isPhotoAccessFlow = false;
+  pendingSessionId: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private photoPurchaseService: PhotoPurchaseService
   ) {
     this.loginForm = this.createForm();
   }
@@ -33,13 +37,23 @@ export class LoginComponent implements OnInit {
     // Charger les comptes par défaut
     this.defaultAccounts = this.authService.getDefaultAccounts();
     
+    // Vérifier si c'est un flow d'accès aux photos
+    const reason = this.route.snapshot.queryParams['reason'];
+    const redirectTo = this.route.snapshot.queryParams['redirectTo'];
+    this.isPhotoAccessFlow = reason === 'photo-access';
+    
+    // Récupérer le sessionId en attente si applicable
+    if (this.isPhotoAccessFlow) {
+      this.pendingSessionId = this.photoPurchaseService.checkPendingAccess();
+    }
+    
     // Récupérer l'URL de retour depuis les query parameters
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    this.returnUrl = redirectTo || this.route.snapshot.queryParams['returnUrl'] || '/';
     
     // Si l'utilisateur est déjà connecté, le rediriger
     if (this.authService.isAuthenticated()) {
       const userRole = this.authService.getUserRole();
-      this.redirectUserByRole(userRole!);
+      this.handlePostLoginRedirect(userRole!);
     }
   }
 
@@ -77,8 +91,8 @@ export class LoginComponent implements OnInit {
             `Bienvenue ${response.user.firstName} !`
           );
           
-          // Rediriger selon le rôle
-          this.redirectUserByRole(response.user.role);
+          // Gérer la redirection post-connexion (avec accès aux photos si applicable)
+          this.handlePostLoginRedirect(response.user.role, response.user.email);
           
         } else {
           this.errorMessage = response.message;
@@ -133,8 +147,8 @@ export class LoginComponent implements OnInit {
             `Bienvenue ${response.user.firstName} ${response.user.lastName} !`
           );
           
-          // Rediriger selon le rôle
-          this.redirectUserByRole(response.user.role);
+          // Gérer la redirection post-connexion
+          this.handlePostLoginRedirect(response.user.role, response.user.email);
           
         } else {
           this.errorMessage = response.message;
@@ -149,16 +163,52 @@ export class LoginComponent implements OnInit {
   }
 
   /**
-   * Rediriger l'utilisateur vers le bon dashboard selon son rôle ou vers returnUrl
+   * Gérer la redirection après connexion avec gestion des achats de photos
    */
-  private redirectUserByRole(role: 'Organizer' | 'Admin'): void {
-    // Si on a une URL de retour spécifique, l'utiliser
+  private async handlePostLoginRedirect(role: 'Organizer' | 'Admin', userEmail?: string): Promise<void> {
+    // Si c'est un flow d'accès aux photos et qu'on a un sessionId
+    if (this.isPhotoAccessFlow && this.pendingSessionId && userEmail) {
+      try {
+        // Associer l'achat à l'utilisateur connecté
+        await this.photoPurchaseService.associatePurchaseToUser(this.pendingSessionId, userEmail).toPromise();
+        
+        // Nettoyer l'accès en attente
+        this.photoPurchaseService.clearPendingAccess();
+        
+        // Charger les achats de l'utilisateur
+        this.photoPurchaseService.loadUserPurchases(userEmail);
+        
+        this.notificationService.success(
+          'Photos associées !',
+          'Vos photos achetées sont maintenant disponibles dans votre espace.'
+        );
+        
+        // Rediriger vers les achats
+        this.router.navigate(['/client/my-purchases']);
+        return;
+      } catch (error) {
+        console.error('Error associating purchase to user:', error);
+        this.notificationService.warning(
+          'Association des photos',
+          'Impossible d\'associer automatiquement vos photos. Contactez le support si nécessaire.'
+        );
+      }
+    }
+
+    // Redirection normale selon le contexte
     if (this.returnUrl && this.returnUrl !== '/') {
       this.router.navigateByUrl(this.returnUrl);
       return;
     }
 
-    // Sinon, redirection par défaut selon le rôle
+    // Redirection par défaut selon le rôle
+    this.redirectUserByRole(role);
+  }
+
+  /**
+   * Rediriger l'utilisateur vers le bon dashboard selon son rôle
+   */
+  private redirectUserByRole(role: 'Organizer' | 'Admin'): void {
     if (role === 'Admin') {
       this.router.navigate(['/admin/dashboard']);
     } else if (role === 'Organizer') {
