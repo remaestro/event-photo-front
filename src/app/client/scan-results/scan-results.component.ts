@@ -110,8 +110,8 @@ export class ScanResultsComponent implements OnInit {
       
       this.foundPhotos.push({
         id: photoId,
-        imageUrl: this.imageUrlService.getWatermarkedUrl(photoId), // Use backend URL
-        thumbnail: this.imageUrlService.getThumbnailUrl(photoId),   // Use backend URL
+        imageUrl: this.getPhotoUrl(photoId, 'watermarked'), // 🆕 Use backend API endpoint
+        thumbnail: this.getPhotoUrl(photoId, 'thumbnail'),   // 🆕 Use backend API endpoint
         timestamp: `15 Juin 2024, ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
         size: '4032x3024',
         price: confidence > 85 ? 8.99 : 5.99, // Higher confidence = higher price
@@ -128,17 +128,19 @@ export class ScanResultsComponent implements OnInit {
   }
 
   /**
-   * Get image URL for a photo with specific quality
+   * Get backend API URL for a photo with specific quality
    */
   getPhotoUrl(photoId: string, quality: 'thumbnail' | 'watermarked' | 'original' = 'watermarked'): string {
-    return this.imageUrlService.getPhotoUrl(photoId, quality);
+    return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=${quality}`;
   }
 
   /**
    * Handle image load errors
    */
   onImageError = (event: any): void => {
-    this.imageUrlService.onImageError(event);
+    console.log('❌ Image failed to load, using placeholder');
+    // Set a placeholder image or hide the image
+    event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
   }
 
   get selectedCount(): number {
@@ -293,16 +295,16 @@ export class ScanResultsComponent implements OnInit {
       this.eventId = eventResponse.id;
       
       // Récupérer les informations de devise et prix de l'événement
-      this.eventCurrency = eventResponse.currency || 'EUR';
-      this.eventPhotoPrice = eventResponse.photoPrice || 5.99;
+      this.eventCurrency = eventResponse.currency || 'XOF';
+      this.eventPhotoPrice = eventResponse.photoPrice || 5000;
 
       // Puis charger les photos de l'événement
       const photosResponse = await this.http.get<any>(`${environment.apiUrl}/api/photo?eventId=${this.eventId}&page=1&limit=100`).toPromise();
       
       this.foundPhotos = photosResponse.photos.map((photo: any) => ({
         id: photo.id,
-        imageUrl: this.imageUrlService.getWatermarkedUrl(photo.id),
-        thumbnail: this.imageUrlService.getThumbnailUrl(photo.id),
+        imageUrl: this.getPhotoUrl(photo.id, 'watermarked'), // 🆕 Use backend API endpoint
+        thumbnail: this.getPhotoUrl(photo.id, 'thumbnail'),   // 🆕 Use backend API endpoint
         timestamp: this.formatDate(photo.uploadDate),
         size: `${photo.dimensions?.width || 0}x${photo.dimensions?.height || 0}`,
         price: this.calculatePhotoPrice(photo),
@@ -334,8 +336,8 @@ export class ScanResultsComponent implements OnInit {
       
       this.foundPhotos = photosResponse.photos.map((photo: any) => ({
         id: photo.id,
-        imageUrl: this.imageUrlService.getWatermarkedUrl(photo.id),
-        thumbnail: this.imageUrlService.getThumbnailUrl(photo.id),
+        imageUrl: this.getPhotoUrl(photo.id, 'watermarked'), // 🆕 Use backend API endpoint
+        thumbnail: this.getPhotoUrl(photo.id, 'thumbnail'),   // 🆕 Use backend API endpoint
         timestamp: this.formatDate(photo.uploadDate),
         size: `${photo.dimensions?.width || 0}x${photo.dimensions?.height || 0}`,
         price: this.calculatePhotoPrice(photo),

@@ -292,7 +292,7 @@ export class RegisterComponent implements OnInit {
       
       // Rediriger vers les achats après un court délai
       setTimeout(() => {
-        this.router.navigate(['/client/my-purchases']);
+        this.router.navigate(['/my-purchases']);
       }, 2000);
       
     } catch (error) {

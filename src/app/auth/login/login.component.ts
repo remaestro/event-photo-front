@@ -184,7 +184,7 @@ export class LoginComponent implements OnInit {
         );
         
         // Rediriger vers les achats
-        this.router.navigate(['/client/my-purchases']);
+        this.router.navigate(['/my-purchases']);
         return;
       } catch (error) {
         console.error('Error associating purchase to user:', error);
