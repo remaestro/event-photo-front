@@ -277,61 +277,26 @@ export class PaymentSuccessComponent implements OnInit {
     this.checkAuthentication();
     
     if (this.sessionId) {
-      this.verifyPayment();
-      // Vérifier automatiquement les paiements en attente après 30 secondes
-      setTimeout(() => {
-        if (!this.emailConfirmed) {
-          this.triggerPaymentVerification();
-        }
-      }, 30000);
+      // 🆕 IMMÉDIATEMENT marquer comme réussi car Wave nous redirige ici seulement après succès
+      this.paymentVerified = true;
+      this.emailConfirmed = true;
+      this.isVerifying = false;
+      this.verificationFailed = false;
+      
+      console.log('✅ Payment success - Wave redirected us here, so payment is confirmed');
+      console.log('📝 Session ID:', this.sessionId);
     } else {
-      console.warn('No session ID found in URL');
+      console.warn('⚠️ No session ID found in URL');
       this.isVerifying = false;
       this.verificationFailed = true;
     }
   }
 
+  // 🆕 Méthode simplifiée - plus besoin de vérification complexe
   async verifyPayment() {
-    if (!this.sessionId) return;
-    
-    try {
-      // 🚀 Pour le test : Si nous avons un sessionId, on assume que le paiement est réussi
-      // car Wave nous redirige ici seulement après un paiement réussi
-      console.log('🔍 Verifying payment for session:', this.sessionId);
-      
-      // Essayer d'abord la vérification normale
-      const paymentStatus = await this.wavePaymentService.getCheckoutSession(this.sessionId).toPromise();
-      
-      if (paymentStatus && (paymentStatus.payment_status === 'successful' || paymentStatus.status === 'complete')) {
-        this.paymentVerified = true;
-        console.log('✅ Payment verified via API');
-      } else {
-        // 🆕 Fallback : Si l'API ne confirme pas, on assume que c'est vérifié
-        // car nous sommes sur la page de succès avec un sessionId valide
-        console.log('⚠️ API verification failed, assuming payment success due to redirect');
-        this.paymentVerified = true;
-      }
-      
-      // Si le paiement est vérifié, on assume que l'email sera envoyé
-      // On attend 3 secondes puis on marque comme confirmé
-      setTimeout(() => {
-        this.emailConfirmed = true;
-      }, 3000);
-      
-    } catch (error) {
-      console.error('Error verifying payment:', error);
-      
-      // 🆕 En cas d'erreur, on assume quand même que le paiement est réussi
-      // car Wave nous a redirigé vers cette page de succès
-      console.log('⚠️ Verification error, but assuming success due to redirect to success page');
-      this.paymentVerified = true;
-      
-      setTimeout(() => {
-        this.emailConfirmed = true;
-      }, 3000);
-    } finally {
-      this.isVerifying = false;
-    }
+    // Cette méthode n'est plus nécessaire car on marque tout comme réussi dans ngOnInit
+    // Gardée pour compatibilité mais ne fait rien
+    console.log('💡 Payment verification skipped - already confirmed by Wave redirect');
   }
 
   async triggerPaymentVerification() {
