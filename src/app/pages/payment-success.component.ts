@@ -285,10 +285,28 @@ export class PaymentSuccessComponent implements OnInit {
       
       console.log('✅ Payment success - Wave redirected us here, so payment is confirmed');
       console.log('📝 Session ID:', this.sessionId);
+      
+      // 🆕 DEBUG: Log all state variables
+      console.log('🔍 DEBUG State:', {
+        paymentVerified: this.paymentVerified,
+        emailConfirmed: this.emailConfirmed,
+        isVerifying: this.isVerifying,
+        verificationFailed: this.verificationFailed,
+        isAuthenticated: this.isAuthenticated,
+        sessionId: this.sessionId
+      });
     } else {
       console.warn('⚠️ No session ID found in URL');
       this.isVerifying = false;
       this.verificationFailed = true;
+      
+      // 🆕 DEBUG: Log state when no session ID
+      console.log('🔍 DEBUG State (no session):', {
+        paymentVerified: this.paymentVerified,
+        emailConfirmed: this.emailConfirmed,
+        isVerifying: this.isVerifying,
+        verificationFailed: this.verificationFailed
+      });
     }
   }
 
