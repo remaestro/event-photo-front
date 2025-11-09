@@ -271,7 +271,8 @@ export class PaymentSuccessComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.sessionId = this.route.snapshot.queryParamMap.get('session_id');
+    // 🆕 NOUVELLE APPROCHE : Récupérer le session_id depuis localStorage au lieu de l'URL
+    this.sessionId = this.getSessionIdFromStorage();
     
     // 🆕 Vérifier d'abord l'authentification
     this.checkAuthentication();
@@ -284,7 +285,7 @@ export class PaymentSuccessComponent implements OnInit {
       this.verificationFailed = false;
       
       console.log('✅ Payment success - Wave redirected us here, so payment is confirmed');
-      console.log('📝 Session ID:', this.sessionId);
+      console.log('📝 Session ID from localStorage:', this.sessionId);
       
       // 🆕 DEBUG: Log all state variables
       console.log('🔍 DEBUG State:', {
@@ -295,8 +296,11 @@ export class PaymentSuccessComponent implements OnInit {
         isAuthenticated: this.isAuthenticated,
         sessionId: this.sessionId
       });
+
+      // 🆕 Nettoyer le localStorage après récupération
+      this.cleanupSessionStorage();
     } else {
-      console.warn('⚠️ No session ID found in URL');
+      console.warn('⚠️ No session ID found in localStorage or URL');
       this.isVerifying = false;
       this.verificationFailed = true;
       
@@ -308,6 +312,44 @@ export class PaymentSuccessComponent implements OnInit {
         verificationFailed: this.verificationFailed
       });
     }
+  }
+
+  // 🆕 Récupérer le session_id depuis localStorage avec fallback vers URL
+  private getSessionIdFromStorage(): string | null {
+    // Essayer d'abord localStorage
+    const storedSessionId = localStorage.getItem('wave_session_id');
+    const storedTimestamp = localStorage.getItem('wave_session_timestamp');
+    
+    if (storedSessionId && storedTimestamp) {
+      // Vérifier que la session n'est pas trop ancienne (max 1 heure)
+      const sessionAge = Date.now() - parseInt(storedTimestamp);
+      const maxAge = 60 * 60 * 1000; // 1 heure en millisecondes
+      
+      if (sessionAge <= maxAge) {
+        console.log('💾 Retrieved session_id from localStorage:', storedSessionId);
+        return storedSessionId;
+      } else {
+        console.warn('⏰ Session_id in localStorage is too old, cleaning up');
+        this.cleanupSessionStorage();
+      }
+    }
+    
+    // Fallback vers l'URL si localStorage ne contient rien
+    const urlSessionId = this.route.snapshot.queryParamMap.get('session_id');
+    if (urlSessionId) {
+      console.log('🔗 Retrieved session_id from URL:', urlSessionId);
+      return urlSessionId;
+    }
+    
+    console.warn('❌ No session_id found in localStorage or URL');
+    return null;
+  }
+
+  // 🆕 Nettoyer le localStorage après utilisation
+  private cleanupSessionStorage(): void {
+    localStorage.removeItem('wave_session_id');
+    localStorage.removeItem('wave_session_timestamp');
+    console.log('🧹 Cleaned up Wave session data from localStorage');
   }
 
   // 🆕 Méthode simplifiée - plus besoin de vérification complexe

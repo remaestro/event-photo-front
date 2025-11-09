@@ -46,7 +46,17 @@ export class WavePaymentService {
       CancelUrl: request.cancelUrl || `${window.location.origin}/payment-cancel`
     };
 
-    return this.http.post<WaveCheckoutResponse>(`${this.baseUrl}/create-checkout`, apiRequest);
+    return this.http.post<WaveCheckoutResponse>(`${this.baseUrl}/create-checkout`, apiRequest)
+      .pipe(
+        tap(response => {
+          // 🆕 Stocker le session_id dans localStorage pour le récupérer après le paiement
+          if (response.success && response.sessionId) {
+            console.log('💾 Storing Wave session_id in localStorage:', response.sessionId);
+            localStorage.setItem('wave_session_id', response.sessionId);
+            localStorage.setItem('wave_session_timestamp', Date.now().toString());
+          }
+        })
+      );
   }
 
   /**
