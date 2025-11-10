@@ -552,18 +552,26 @@ export class PaymentSuccessComponent implements OnInit {
     }
   }
 
-  // 🆕 Télécharger toutes les photos
+  // 🆕 Télécharger toutes les photos - VERSION CORRIGÉE
   async downloadAllPhotos() {
     try {
       console.log('📦 Starting bulk download of', this.purchasedPhotos.length, 'photos');
       
-      for (const photo of this.purchasedPhotos) {
-        await this.downloadPhoto(photo);
-        // Petite pause entre les téléchargements pour éviter de surcharger le serveur
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // 🆕 CORRECTION : Téléchargements parallèles avec délai échelonné
+      this.purchasedPhotos.forEach((photo, index) => {
+        // Échelonner les téléchargements avec un délai de 300ms entre chaque
+        setTimeout(() => {
+          this.downloadPhoto(photo);
+          console.log(`📥 Download ${index + 1}/${this.purchasedPhotos.length} initiated for photo ${photo.photoId || photo.id}`);
+        }, index * 300);
+      });
       
-      console.log('✅ All photos download initiated');
+      console.log('✅ All photo downloads initiated with staggered timing');
+      
+      // 🆕 Afficher un message de confirmation
+      const totalTime = this.purchasedPhotos.length * 0.3; // secondes
+      alert(`📥 Téléchargement de ${this.purchasedPhotos.length} photos lancé !\n\nLes téléchargements vont commencer dans les ${totalTime.toFixed(1)} prochaines secondes.`);
+      
     } catch (error) {
       console.error('❌ Error downloading all photos:', error);
       alert('Erreur lors du téléchargement de toutes les photos');
