@@ -120,18 +120,21 @@ import { environment } from '../../environments/environment';
                 <!-- Grille de photos -->
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   <div *ngFor="let photo of purchasedPhotos" class="relative group bg-white rounded-lg border overflow-hidden shadow-sm">
-                    <!-- 🆕 CORRECTION : Améliorer l'affichage des images -->
-                    <div class="w-full aspect-square bg-gray-100 flex items-center justify-center">
+                    <!-- 🆕 CORRECTION : Container d'image sans overlay par-dessus -->
+                    <div class="w-full aspect-square bg-gray-100 relative">
+                      <!-- Image principale -->
                       <img [src]="getPhotoThumbnailUrl(photo)" 
                            [alt]="'Photo ' + photo.id"
-                           class="w-full h-full object-cover rounded-lg"
-                           [style.display]="photo.imageError ? 'none' : 'block'"
+                           class="w-full h-full object-cover absolute inset-0"
+                           [style.opacity]="photo.imageError ? '0' : '1'"
+                           [style.transition]="'opacity 0.3s ease'"
                            (error)="onImageError($event, photo)"
                            (load)="onImageLoad($event, photo)"
                            loading="lazy">
                       
                       <!-- Placeholder si l'image ne charge pas -->
-                      <div *ngIf="photo.imageError" class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
+                      <div *ngIf="photo.imageError" 
+                           class="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500">
                         <div class="text-center">
                           <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -141,27 +144,28 @@ import { environment } from '../../environments/environment';
                       </div>
                       
                       <!-- Indicateur de chargement -->
-                      <div *ngIf="!photo.imageLoaded && !photo.imageError" class="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+                      <div *ngIf="!photo.imageLoaded && !photo.imageError" 
+                           class="absolute inset-0 bg-gray-200 flex items-center justify-center">
                         <svg class="animate-spin h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24">
                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       </div>
-                    </div>
-                    
-                    <!-- Overlay avec bouton de téléchargement -->
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
-                      <button (click)="downloadPhoto(photo)"
-                              class="opacity-0 group-hover:opacity-100 transition-opacity bg-white text-green-600 px-3 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 hover:bg-green-50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4-9H8l-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7l-2-2z"></path>
-                        </svg>
-                        <span>Télécharger</span>
-                      </button>
+                      
+                      <!-- 🆕 CORRECTION : Overlay au hover seulement, sans bloquer l'image -->
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <button (click)="downloadPhoto(photo)"
+                                class="bg-white text-green-600 px-3 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 hover:bg-green-50 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4-9H8l-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7l-2-2z"></path>
+                          </svg>
+                          <span>Télécharger</span>
+                        </button>
+                      </div>
                     </div>
                     
                     <!-- Badge du prix -->
-                    <div class="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                    <div class="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full z-10">
                       {{ formatPrice(photo.price) }}
                     </div>
                   </div>
