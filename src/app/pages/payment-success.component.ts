@@ -491,31 +491,35 @@ export class PaymentSuccessComponent implements OnInit {
         // 🆕 CORRECTION : Utiliser quality=original pour télécharger la photo complète sans watermark
         const downloadUrl = `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
         
+        // 🆕 Créer un nom de fichier propre
+        const fileName = photo.filename || `photo-${photoId}.jpg`;
+        
         // Ouvrir le lien de téléchargement dans un nouvel onglet
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = photo.filename || `photo-${photoId}.jpg`;
+        link.download = fileName; // 🆕 Utiliser le nom original sans suffixe
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        console.log('✅ Original photo download initiated for:', photo.filename);
+        console.log('✅ Original photo download initiated for:', fileName);
       } else if (photo.originalUrl) {
         // 🆕 Fallback : extraire l'ID depuis l'URL Azure et utiliser l'API backend
         const photoId = this.extractPhotoIdFromUrl(photo.originalUrl);
         if (photoId) {
           const downloadUrl = `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
+          const fileName = photo.filename || `photo-${photoId}.jpg`;
           
           const link = document.createElement('a');
           link.href = downloadUrl;
-          link.download = photo.filename || `photo-${photoId}.jpg`;
+          link.download = fileName;
           link.target = '_blank';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           
-          console.log('✅ Original photo download initiated via URL extraction for:', photo.filename);
+          console.log('✅ Original photo download initiated via URL extraction for:', fileName);
         } else {
           console.error('❌ Could not extract photo ID from originalUrl:', photo.originalUrl);
           alert('Erreur : impossible d\'extraire l\'ID de la photo depuis l\'URL');
