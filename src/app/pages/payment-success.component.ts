@@ -596,7 +596,8 @@ export class PaymentSuccessComponent implements OnInit {
         currency: 'XOF',
         purchaseDate: new Date(),
         status: 'active',
-        imageError: false
+        imageError: false,
+        imageLoaded: false // 🆕 Initialiser l'état de chargement
       },
       {
         id: '2',
@@ -610,7 +611,8 @@ export class PaymentSuccessComponent implements OnInit {
         currency: 'XOF',
         purchaseDate: new Date(),
         status: 'active',
-        imageError: false
+        imageError: false,
+        imageLoaded: false // 🆕 Initialiser l'état de chargement
       },
       {
         id: '3',
@@ -624,7 +626,8 @@ export class PaymentSuccessComponent implements OnInit {
         currency: 'XOF',
         purchaseDate: new Date(),
         status: 'active',
-        imageError: false
+        imageError: false,
+        imageLoaded: false // 🆕 Initialiser l'état de chargement
       }
     ];
 
@@ -649,14 +652,16 @@ export class PaymentSuccessComponent implements OnInit {
 
   // 🆕 Gérer les erreurs de chargement d'image
   onImageError(event: Event, photo: any) {
-    console.log('❌ Image failed to load:', photo.thumbnailUrl);
+    console.log('❌ Image failed to load:', photo);
     photo.imageError = true;
+    photo.imageLoaded = false; // 🆕 Marquer comme non chargé
   }
 
   // 🆕 Gérer le chargement réussi d'image
   onImageLoad(event: Event, photo: any) {
-    console.log('✅ Image loaded successfully:', photo.thumbnailUrl);
+    console.log('✅ Image loaded successfully:', photo);
     photo.imageError = false;
+    photo.imageLoaded = true; // 🆕 Marquer comme chargé
   }
 
   // 🆕 Obtenir l'URL de la miniature via l'API backend
