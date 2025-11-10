@@ -69,22 +69,32 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Augmenter la quantité d'un article
   increaseQuantity(item: CartItem): void {
+    console.log('🔼 INCREASE button clicked for photo', item.photoId);
+    
+    if (this.isUpdatingQuantity) {
+      console.log('❌ Update already in progress, ignoring click');
+      return; // Éviter les doubles clics
+    }
+    
+    console.log(`🔼 Increasing quantity for photo ${item.photoId} from ${item.quantity} to ${item.quantity + 1}`);
     this.isUpdatingQuantity = true;
+    
     this.cartService.updateQuantity(item.photoId, item.quantity + 1).subscribe({
       next: (success) => {
         if (success) {
           this.lastAction = `Quantité augmentée pour ${item.photoId}`;
+          console.log(`✅ Quantity increased successfully for photo ${item.photoId}`);
         } else {
           this.lastAction = `Erreur lors de la mise à jour de ${item.photoId}`;
+          console.error(`❌ Failed to increase quantity for photo ${item.photoId}`);
         }
-        setTimeout(() => {
-          this.isUpdatingQuantity = false;
-          this.lastAction = '';
-        }, 1000);
+        // 🆕 CORRECTION : Toujours remettre à false dans next
+        this.isUpdatingQuantity = false;
+        setTimeout(() => this.lastAction = '', 1000);
       },
       error: (error) => {
-        console.error('Error updating quantity:', error);
-        this.isUpdatingQuantity = false;
+        console.error('❌ Error increasing quantity:', error);
+        this.isUpdatingQuantity = false; // 🆕 CORRECTION : Remettre à false en cas d'erreur
         this.lastAction = 'Erreur lors de la mise à jour';
         setTimeout(() => this.lastAction = '', 1000);
       }
@@ -93,30 +103,41 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Diminuer la quantité d'un article
   decreaseQuantity(item: CartItem): void {
+    console.log('🔽 DECREASE button clicked for photo', item.photoId);
+    
+    if (this.isUpdatingQuantity) {
+      console.log('❌ Update already in progress, ignoring click');
+      return; // Éviter les doubles clics
+    }
+    
+    console.log(`🔽 Decreasing quantity for photo ${item.photoId} from ${item.quantity} to ${item.quantity - 1}`);
     this.isUpdatingQuantity = true;
+    
     if (item.quantity > 1) {
       this.cartService.updateQuantity(item.photoId, item.quantity - 1).subscribe({
         next: (success) => {
           if (success) {
             this.lastAction = `Quantité diminuée pour ${item.photoId}`;
+            console.log(`✅ Quantity decreased successfully for photo ${item.photoId}`);
           } else {
             this.lastAction = `Erreur lors de la mise à jour de ${item.photoId}`;
+            console.error(`❌ Failed to decrease quantity for photo ${item.photoId}`);
           }
-          setTimeout(() => {
-            this.isUpdatingQuantity = false;
-            this.lastAction = '';
-          }, 1000);
+          // 🆕 CORRECTION : Toujours remettre à false dans next
+          this.isUpdatingQuantity = false;
+          setTimeout(() => this.lastAction = '', 1000);
         },
         error: (error) => {
-          console.error('Error updating quantity:', error);
-          this.isUpdatingQuantity = false;
+          console.error('❌ Error decreasing quantity:', error);
+          this.isUpdatingQuantity = false; // 🆕 CORRECTION : Remettre à false en cas d'erreur
           this.lastAction = 'Erreur lors de la mise à jour';
           setTimeout(() => this.lastAction = '', 1000);
         }
       });
     } else {
+      // Si quantité = 1, supprimer l'item au lieu de diminuer
       this.removeItem(item);
-      return;
+      this.isUpdatingQuantity = false; // 🆕 CORRECTION : Remettre à false
     }
   }
 

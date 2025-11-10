@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { delay, map, catchError, tap, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-import { CartDataService, Cart as ApiCart, AddCartItemRequest } from './cart-data.service';
+import { CartDataService, Cart as ApiCart, AddCartItemRequest, AddItemsBatchRequest } from './cart-data.service';
 import { EventsDataService } from './events-data.service';
 import { environment } from '../../../environments/environment';
 
@@ -98,6 +98,8 @@ export class CartService {
    * Ajouter un item au panier - maintenant simplifié car le backend calcule les prix
    */
   addItem(photoId: string, eventId: string, format: 'digital' | 'print_4x6' | 'print_8x10' | 'print_16x20' = 'digital'): Observable<boolean> {
+    console.log(`🛒 [addItem] Starting to add photo ${photoId} to cart`);
+    
     const request: AddCartItemRequest = {
       photoId: photoId.toString(),
       quantity: 1,
@@ -108,58 +110,125 @@ export class CartService {
 
     return this.cartDataService.addItem(request).pipe(
       map(apiCart => {
+        console.log(`✅ [addItem] API success for photo ${photoId}, cart now has ${apiCart.items.length} items`);
         const items = this.mapApiCartToLocal(apiCart);
         this.cartItemsSubject.next(items);
         this.updateCartSummary();
+        console.log(`📊 [addItem] Local cart updated, now has ${items.length} items`);
         return true;
       }),
       catchError((error) => {
-        console.error('Error adding item to cart:', error);
+        console.error(`❌ [addItem] API failed for photo ${photoId}:`, error);
         // Fallback: essayer de récupérer les données d'événement pour le mock
         return this.getEventDetails(eventId).pipe(
           switchMap(eventData => {
+            console.log(`🔄 [addItem] Falling back to mock for photo ${photoId}`);
             const price = this.calculatePrice(eventData, format);
             const currency = eventData.currency || 'EUR';
             return this.addItemDirect(photoId, eventId, eventData.name, price, currency);
           }),
-          catchError(() => of(false))
+          catchError(() => {
+            console.error(`❌ [addItem] Fallback also failed for photo ${photoId}`);
+            return of(false);
+          })
         );
       })
     );
   }
 
   /**
-   * Ajouter plusieurs items au panier
+   * Ajouter plusieurs items au panier - VERSION OPTIMISÉE avec ajout en lot
    */
   addMultipleToCart(items: Array<{photoId: string, eventId: string, format?: string}>): Observable<boolean> {
-    // Regrouper par événement pour optimiser les appels API
-    const eventGroups = new Map<string, any[]>();
-    items.forEach(item => {
-      if (!eventGroups.has(item.eventId)) {
-        eventGroups.set(item.eventId, []);
-      }
-      eventGroups.get(item.eventId)!.push(item);
-    });
+    console.log('🛒 Adding multiple items to cart in batch:', items.length);
+    
+    // Validation des données
+    if (!items || items.length === 0) {
+      console.warn('❌ No items to add to cart');
+      return of(false);
+    }
 
-    const addPromises = Array.from(eventGroups.entries()).map(([eventId, eventItems]) => 
-      this.getEventDetails(eventId).pipe(
-        switchMap(eventData => {
-          const addItemPromises = eventItems.map(item => 
-            this.addItem(item.photoId, item.eventId, item.format as any || 'digital').toPromise()
-          );
-          return Promise.all(addItemPromises);
-        })
-      ).toPromise()
+    // 🆕 NOUVELLE APPROCHE : Ajout en lot (batch) via API
+    const batchRequest: AddItemsBatchRequest = {
+      items: items.map(item => ({
+        photoId: item.photoId.toString(), // 🆕 CORRECTION : Convertir en string
+        quantity: 1,
+        format: (item.format as any) || 'digital',
+        productType: (item.format as any) || 'digital'
+      }))
+    };
+
+    console.log('📦 Sending batch request with', batchRequest.items.length, 'items:', batchRequest);
+
+    return this.cartDataService.addItemsBatch(batchRequest).pipe(
+      map(response => {
+        console.log('✅ Batch add successful:', response);
+        if (response.success && response.cart) {
+          const items = this.mapApiCartToLocal(response.cart);
+          this.cartItemsSubject.next(items);
+          this.updateCartSummary();
+          console.log(`📊 Cart updated - now has ${items.length} items total`);
+          return true;
+        }
+        return false;
+      }),
+      catchError((error) => {
+        console.error('❌ Batch add failed, falling back to sequential add:', error);
+        console.error('❌ Batch error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: error.url,
+          message: error.message,
+          error: error.error
+        });
+        // Fallback vers l'ancienne méthode séquentielle
+        return this.addMultipleToCartSequential(items);
+      })
     );
+  }
 
+  /**
+   * Méthode de fallback : ajout séquentiel (ancienne méthode)
+   */
+  private addMultipleToCartSequential(items: Array<{photoId: string, eventId: string, format?: string}>): Observable<boolean> {
+    console.log('🔄 Using sequential fallback for', items.length, 'items');
+    
     return new Observable(observer => {
-      Promise.all(addPromises).then(() => {
-        observer.next(true);
-        observer.complete();
-      }).catch(() => {
-        observer.next(false);
-        observer.complete();
-      });
+      let successCount = 0;
+      let currentIndex = 0;
+      
+      const addNextItem = () => {
+        if (currentIndex >= items.length) {
+          const success = successCount === items.length;
+          console.log(`✅ Sequential add finished: ${successCount}/${items.length} successful`);
+          observer.next(success);
+          observer.complete();
+          return;
+        }
+
+        const item = items[currentIndex];
+        console.log(`📸 Adding item ${currentIndex + 1}/${items.length} sequentially:`, item);
+        
+        this.addItem(item.photoId, item.eventId, item.format as any || 'digital').subscribe({
+          next: (success) => {
+            if (success) {
+              successCount++;
+              console.log(`✅ Item ${currentIndex + 1} added successfully`);
+            } else {
+              console.error(`❌ Failed to add item ${currentIndex + 1}`);
+            }
+            currentIndex++;
+            setTimeout(() => addNextItem(), 100);
+          },
+          error: (error) => {
+            console.error(`❌ Error adding item ${currentIndex + 1}:`, error);
+            currentIndex++;
+            setTimeout(() => addNextItem(), 100);
+          }
+        });
+      };
+
+      addNextItem();
     });
   }
 

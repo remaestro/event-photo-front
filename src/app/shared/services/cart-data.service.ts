@@ -38,6 +38,17 @@ export interface AddCartItemRequest {
   customizations?: string;
 }
 
+// 🆕 Interface pour l'ajout en lot
+export interface AddItemsBatchRequest {
+  items: AddCartItemRequest[];
+}
+
+export interface CartResponse {
+  cart: Cart;
+  success: boolean;
+  message: string;
+}
+
 export interface UpdateCartItemRequest {
   quantity: number;
 }
@@ -56,6 +67,11 @@ export class CartDataService {
 
   addItem(item: AddCartItemRequest): Observable<Cart> {
     return this.http.post<Cart>(`${this.baseUrl}/items`, item);
+  }
+
+  // 🆕 Nouvelle méthode pour ajout en lot
+  addItemsBatch(request: AddItemsBatchRequest): Observable<CartResponse> {
+    return this.http.post<CartResponse>(`${this.baseUrl}/items/batch`, request);
   }
 
   updateItem(itemId: string, updates: UpdateCartItemRequest): Observable<Cart> {

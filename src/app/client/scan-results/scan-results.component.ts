@@ -232,35 +232,67 @@ export class ScanResultsComponent implements OnInit {
 
   async addToCart() {
     const selectedPhotos = this.foundPhotos.filter(p => p.selected);
-    if (selectedPhotos.length === 0) return;
+    if (selectedPhotos.length === 0) {
+      alert('Veuillez sélectionner au moins une photo');
+      return;
+    }
 
+    console.log('🛒 Starting to add', selectedPhotos.length, 'photos to cart');
     this.isLoading = true;
+    
     try {
-      // Utiliser la nouvelle API simplifiée du CartService
-      // Le service récupérera automatiquement les bonnes données d'événement (prix, devise)
-      const cartItems = selectedPhotos.map(photo => ({
-        photoId: photo.id,
-        eventId: photo.eventId,
-        format: 'digital' as const // Format par défaut
-      }));
+      // 🆕 CORRECTION : Préparer les items avec plus d'informations de debug
+      const cartItems = selectedPhotos.map((photo, index) => {
+        console.log(`📸 Preparing photo ${index + 1}/${selectedPhotos.length}:`, {
+          photoId: photo.id,
+          eventId: photo.eventId,
+          filename: photo.metadata?.photographer || `Photo ${photo.id}`
+        });
+        
+        return {
+          photoId: photo.id,
+          eventId: photo.eventId,
+          format: 'digital' as const
+        };
+      });
 
+      console.log('📦 Cart items prepared:', cartItems);
+
+      // 🆕 CORRECTION : Attendre la fin complète de l'ajout avant de naviguer
       this.cartService.addMultipleToCart(cartItems).subscribe({
-        next: async (success) => {
+        next: (success) => {
+          console.log('🛒 Cart service response:', success);
+          
           if (success) {
-            await this.delay(500);
-            this.router.navigate(['/cart']);
+            console.log('✅ All photos added successfully, navigating to cart...');
+            
+            // 🆕 CORRECTION : Navigation immédiate sans délai artificiel
+            this.router.navigate(['/cart']).then(navSuccess => {
+              if (navSuccess) {
+                console.log('✅ Navigation to cart successful');
+                // Optionnel : déselectionner les photos après succès
+                this.clearSelection();
+              } else {
+                console.error('❌ Navigation to cart failed');
+              }
+            }).catch(navError => {
+              console.error('❌ Navigation error:', navError);
+            });
           } else {
-            console.error('Error adding items to cart');
+            console.error('❌ Failed to add some or all photos to cart');
+            alert('Erreur lors de l\'ajout au panier. Veuillez réessayer.');
           }
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error adding to cart:', error);
+          console.error('❌ Error during cart operation:', error);
+          alert('Erreur lors de l\'ajout au panier. Veuillez réessayer.');
           this.isLoading = false;
         }
       });
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('❌ Unexpected error in addToCart:', error);
+      alert('Erreur inattendue. Veuillez réessayer.');
       this.isLoading = false;
     }
   }
