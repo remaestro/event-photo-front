@@ -483,23 +483,43 @@ export class PaymentSuccessComponent implements OnInit {
     }
   }
 
-  // 🆕 Télécharger une photo spécifique
+  // 🆕 Télécharger une photo spécifique (version originale complète)
   async downloadPhoto(photo: any) {
     try {
-      if (photo.photoId) {
-        // Utiliser l'endpoint de téléchargement sécurisé du backend
-        const downloadUrl = `${environment.apiUrl}/api/Photo/${photo.photoId}/serve?quality=original`;
+      if (photo.photoId || photo.id) {
+        const photoId = photo.photoId || photo.id;
+        // 🆕 CORRECTION : Utiliser quality=original pour télécharger la photo complète sans watermark
+        const downloadUrl = `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
         
         // Ouvrir le lien de téléchargement dans un nouvel onglet
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = photo.filename || `photo-${photo.id}.jpg`;
+        link.download = photo.filename || `photo-${photoId}.jpg`;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        console.log('✅ Photo download initiated for:', photo.filename);
+        console.log('✅ Original photo download initiated for:', photo.filename);
+      } else if (photo.originalUrl) {
+        // 🆕 Fallback : extraire l'ID depuis l'URL Azure et utiliser l'API backend
+        const photoId = this.extractPhotoIdFromUrl(photo.originalUrl);
+        if (photoId) {
+          const downloadUrl = `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
+          
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = photo.filename || `photo-${photoId}.jpg`;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          console.log('✅ Original photo download initiated via URL extraction for:', photo.filename);
+        } else {
+          console.error('❌ Could not extract photo ID from originalUrl:', photo.originalUrl);
+          alert('Erreur : impossible d\'extraire l\'ID de la photo depuis l\'URL');
+        }
       } else {
         // Fallback pour les photos de démonstration
         console.log('🎭 Demo photo download:', photo.filename);
@@ -625,20 +645,82 @@ export class PaymentSuccessComponent implements OnInit {
   // 🆕 Obtenir l'URL de la miniature via l'API backend
   getPhotoThumbnailUrl(photo: any): string {
     if (photo.photoId) {
-      // Si nous avons un photoId, utiliser l'endpoint de service d'images du backend
+      // Si nous avons un photoId direct, utiliser l'endpoint de service d'images du backend
       return `${environment.apiUrl}/api/Photo/${photo.photoId}/serve?quality=thumbnail`;
-    } else {
-      // Fallback pour les photos de démonstration
-      return photo.thumbnailUrl || photo.photoUrl || '';
+    } else if (photo.id) {
+      // Si nous avons un id de photo, utiliser l'endpoint backend
+      return `${environment.apiUrl}/api/Photo/${photo.id}/serve?quality=thumbnail`;
+    } else if (photo.thumbnailUrl) {
+      // 🆕 CORRECTION : Extraire l'ID depuis l'URL Azure et construire l'URL backend
+      const photoId = this.extractPhotoIdFromUrl(photo.thumbnailUrl);
+      if (photoId) {
+        return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=thumbnail`;
+      }
+    } else if (photo.photoUrl) {
+      // Fallback avec photoUrl
+      const photoId = this.extractPhotoIdFromUrl(photo.photoUrl);
+      if (photoId) {
+        return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=thumbnail`;
+      }
     }
+    
+    // Fallback : retourner l'URL originale (mais ça ne marchera pas avec Azure privé)
+    return photo.thumbnailUrl || photo.photoUrl || '';
   }
 
   // 🆕 Obtenir l'URL complète de la photo via l'API backend
   getPhotoFullUrl(photo: any): string {
     if (photo.photoId) {
       return `${environment.apiUrl}/api/Photo/${photo.photoId}/serve?quality=watermarked`;
-    } else {
-      return photo.photoUrl || photo.originalUrl || '';
+    } else if (photo.id) {
+      return `${environment.apiUrl}/api/Photo/${photo.id}/serve?quality=watermarked`;
+    } else if (photo.photoUrl) {
+      const photoId = this.extractPhotoIdFromUrl(photo.photoUrl);
+      if (photoId) {
+        return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=watermarked`;
+      }
+    } else if (photo.thumbnailUrl) {
+      const photoId = this.extractPhotoIdFromUrl(photo.thumbnailUrl);
+      if (photoId) {
+        return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=watermarked`;
+      }
+    }
+    
+    return photo.photoUrl || photo.originalUrl || '';
+  }
+
+  // 🆕 Extraire l'ID de la photo depuis une URL Azure Blob Storage
+  private extractPhotoIdFromUrl(url: string): string | null {
+    if (!url) return null;
+    
+    try {
+      // Exemple d'URL Azure: https://eventphotoblobstorage.blob.core.windows.net/eventphoto-storage/events/4/thumbnail/IMG_8167_thumb.JPG
+      // On veut extraire l'ID de l'événement ou de la photo
+      
+      // Pattern 1: Extraire l'ID de l'événement depuis le path /events/{eventId}/
+      const eventMatch = url.match(/\/events\/(\d+)\//);
+      if (eventMatch) {
+        const eventId = eventMatch[1];
+        // Pour l'instant, utiliser l'eventId comme photoId (à ajuster selon votre logique)
+        return eventId;
+      }
+      
+      // Pattern 2: Extraire un ID depuis le nom du fichier si il y en a un
+      const filenameMatch = url.match(/\/([^\/]+)\.(jpg|jpeg|png|gif)$/i);
+      if (filenameMatch) {
+        const filename = filenameMatch[1];
+        // Si le filename contient un ID (ex: IMG_8167_thumb -> 8167)
+        const idMatch = filename.match(/(\d+)/);
+        if (idMatch) {
+          return idMatch[1];
+        }
+      }
+      
+      console.warn('❌ Could not extract photo ID from URL:', url);
+      return null;
+    } catch (error) {
+      console.error('❌ Error extracting photo ID from URL:', url, error);
+      return null;
     }
   }
 }
