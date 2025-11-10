@@ -419,16 +419,19 @@ export class PaymentSuccessComponent implements OnInit {
 
   // 🆕 Nouvelles méthodes pour l'accès aux photos
   registerToAccessPhotos() {
+    console.log('🔗 Redirecting to register page from payment success');
+    
     // Stocker le sessionId pour le récupérer après l'inscription
     if (this.sessionId) {
       localStorage.setItem('pendingPhotoAccess', JSON.stringify({
         sessionId: this.sessionId,
         timestamp: Date.now()
       }));
+      console.log('💾 Stored pending photo access data:', this.sessionId);
     }
     
-    // Rediriger vers l'inscription avec un paramètre spécial
-    this.router.navigate(['/auth/register'], { 
+    // 🆕 CORRECTION : Rediriger vers la route correcte '/register' au lieu de '/auth/register'
+    this.router.navigate(['/register'], { 
       queryParams: { 
         redirectTo: 'my-purchases',
         reason: 'photo-access'
@@ -437,16 +440,19 @@ export class PaymentSuccessComponent implements OnInit {
   }
 
   loginToAccessPhotos() {
+    console.log('🔗 Redirecting to login page from payment success');
+    
     // Stocker le sessionId pour le récupérer après la connexion
     if (this.sessionId) {
       localStorage.setItem('pendingPhotoAccess', JSON.stringify({
         sessionId: this.sessionId,
         timestamp: Date.now()
       }));
+      console.log('💾 Stored pending photo access data:', this.sessionId);
     }
     
-    // Rediriger vers la connexion avec un paramètre spécial
-    this.router.navigate(['/auth/login'], { 
+    // 🆕 CORRECTION : Rediriger vers la route correcte '/login' au lieu de '/auth/login'
+    this.router.navigate(['/login'], { 
       queryParams: { 
         redirectTo: 'my-purchases',
         reason: 'photo-access'
