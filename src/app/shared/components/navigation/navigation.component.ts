@@ -19,7 +19,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   isMenuOpen = false;
   isUserLoggedIn = false;
   currentUser: User | null = null;
-  userRole: 'Organizer' | 'Admin' | null = null;  // Capitalisation corrigée
+  userRole: 'Organizer' | 'Admin' | 'Client' | null = null;  // 🆕 Ajout du rôle Client
   cartSummary: CartSummary = { 
     itemCount: 0,
     subtotal: 0,

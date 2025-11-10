@@ -2,18 +2,22 @@
   <div class="max-w-md w-full space-y-8">
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        {{ isInvitedUser ? 'Accepter l\'invitation' : 'Créer votre compte' }}
+        {{ getPageTitle() }}
       </h2>
       <p class="mt-2 text-center text-sm text-gray-600">
-        <span *ngIf="!isInvitedUser">
-          Ou
-          <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-            connectez-vous à votre compte existant
-          </a>
-        </span>
-        <span *ngIf="isInvitedUser" class="text-green-600 font-medium">
-          🎉 Vous avez été invité(e) !
-        </span>
+        {{ getPageDescription() }}
+      </p>
+      <p class="mt-1 text-center text-sm text-gray-500" *ngIf="!isPhotoAccessFlow && !isInvitedUser">
+        Ou
+        <a routerLink="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+          connectez-vous à votre compte existant
+        </a>
+      </p>
+      <p class="mt-1 text-center text-sm text-gray-500" *ngIf="isPhotoAccessFlow">
+        Déjà un compte ?
+        <button (click)="goToLogin()" class="font-medium text-blue-600 hover:text-blue-500">
+          Se connecter
+        </button>
       </p>
     </div>
 
@@ -57,10 +61,49 @@
       </div>
     </div>
 
+    <!-- 🆕 Informations d'accès aux photos -->
+    <div *ngIf="isPhotoAccessFlow" 
+         class="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
+      <div class="flex items-start space-x-3">
+        <div class="text-3xl">📸</div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">
+            Accès à vos photos achetées
+          </h3>
+          <div class="space-y-2 text-sm">
+            <p class="text-gray-700">
+              Créez un compte <span class="font-medium text-blue-700">client</span> pour pouvoir :
+            </p>
+            <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+              <li>Retrouver vos photos achetées à tout moment</li>
+              <li>Télécharger vos photos depuis n'importe quel appareil</li>
+              <li>Voir l'historique de tous vos achats</li>
+              <li>Recevoir des notifications pour vos commandes futures</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 bg-white rounded-md p-3 border border-blue-200">
+        <p class="text-sm text-blue-800">
+          🔒 <strong>Sans compte :</strong> Vous perdrez l'accès à vos photos après avoir fermé cette page.
+        </p>
+      </div>
+    </div>
+
     <!-- Role Selection (if not pre-selected) -->
-    <div *ngIf="!selectedRole && !isInvitedUser" class="bg-white rounded-lg shadow-md p-6">
+    <div *ngIf="!selectedRole && !isInvitedUser && !isPhotoAccessFlow" class="bg-white rounded-lg shadow-md p-6">
       <h3 class="text-lg font-medium text-gray-900 mb-4">Choisissez votre rôle</h3>
       <div class="grid grid-cols-1 gap-4">
+        <!-- 🆕 Option Client ajoutée en premier -->
+        <button (click)="selectRole('client')" 
+                class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
+          <div class="text-2xl mr-3">👤</div>
+          <div class="text-left">
+            <div class="font-medium">Client</div>
+            <div class="text-sm text-gray-500">J'achète et télécharge des photos d'événements</div>
+          </div>
+        </button>
+        
         <button (click)="selectRole('organizer')" 
                 class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors">
           <div class="text-2xl mr-3">📸</div>
@@ -69,6 +112,7 @@
             <div class="text-sm text-gray-500">Je crée et gère des événements photo</div>
           </div>
         </button>
+        
         <button (click)="selectRole('admin')" 
                 class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors">
           <div class="text-2xl mr-3">🛡️</div>
@@ -81,15 +125,17 @@
     </div>
 
     <!-- Registration Form -->
-    <form *ngIf="selectedRole" class="mt-8 space-y-6" (ngSubmit)="onSubmit()" [formGroup]="registerForm">
-      <!-- Role Display -->
-      <div class="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
+    <form *ngIf="selectedRole || isPhotoAccessFlow" class="mt-8 space-y-6" (ngSubmit)="onSubmit()" [formGroup]="registerForm">
+      <!-- Role Display (only if role is selected) -->
+      <div *ngIf="selectedRole" class="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
         <div class="flex items-center">
-          <div class="text-2xl mr-3">{{ selectedRole === 'organizer' ? '📸' : '🛡️' }}</div>
+          <div class="text-2xl mr-3">{{ selectedRole === 'organizer' ? '📸' : selectedRole === 'admin' ? '🛡️' : '👤' }}</div>
           <div>
-            <div class="font-medium">{{ selectedRole === 'organizer' ? 'Organisateur' : 'Administrateur' }}</div>
+            <div class="font-medium">{{ selectedRole === 'organizer' ? 'Organisateur' : selectedRole === 'admin' ? 'Administrateur' : 'Client' }}</div>
             <div class="text-sm text-gray-500">
-              {{ isInvitedUser ? 'Bénéficiaire invité' : (selectedRole === 'organizer' ? 'Créateur d\'événements' : 'Modérateur de plateforme') }}
+              {{ isInvitedUser ? 'Bénéficiaire invité' : 
+                 (selectedRole === 'organizer' ? 'Créateur d\'événements' : 
+                  selectedRole === 'admin' ? 'Modérateur de plateforme' : 'Accès aux achats') }}
             </div>
           </div>
         </div>
@@ -98,6 +144,15 @@
         </button>
         <div *ngIf="isInvitedUser" class="text-green-600 text-sm font-medium">
           ✓ Rôle défini par l'invitation
+        </div>
+      </div>
+
+      <!-- Client Role Display (for photo access flow) -->
+      <div *ngIf="isPhotoAccessFlow" class="bg-blue-50 rounded-lg border border-blue-200 p-4 flex items-center">
+        <div class="text-2xl mr-3">👤</div>
+        <div>
+          <div class="font-medium text-blue-900">Compte Client</div>
+          <div class="text-sm text-blue-700">Accès à vos achats et téléchargements</div>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'organizer' | 'admin'; // Fixed to match AuthService expectations
+  role: 'organizer' | 'admin' | 'client'; // 🆕 Ajout du rôle 'client'
   phoneNumber?: string;
 }
 

@@ -28,7 +28,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 })
 export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
-  selectedRole: 'organizer' | 'admin' | null = null;
+  selectedRole: 'organizer' | 'admin' | 'client' | null = null; // 🆕 Ajout du rôle 'client'
   isLoading = false;
   registrationSuccess = false;
   
@@ -157,7 +157,7 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  selectRole(role: 'organizer' | 'admin'): void {
+  selectRole(role: 'organizer' | 'admin' | 'client'): void {
     this.selectedRole = role;
     this.updateFormWithRole();
   }
@@ -177,15 +177,31 @@ export class RegisterComponent implements OnInit {
     this.isLoading = true;
     const formValue = this.registerForm.value;
 
+    // 🆕 Déterminer le rôle selon le contexte
+    let userRole: 'organizer' | 'admin' | 'client' = 'client'; // Par défaut client
+    
+    if (this.isInvitedUser) {
+      userRole = 'organizer'; // Les invités deviennent organisateurs
+    } else if (this.selectedRole) {
+      userRole = this.selectedRole; // Rôle sélectionné (organizer/admin)
+    }
+    // Pour isPhotoAccessFlow, on garde 'client' par défaut
+
     const registerRequest: RegisterRequest = {
       email: formValue.email.trim().toLowerCase(),
       password: formValue.password,
       confirmPassword: formValue.confirmPassword,
       firstName: formValue.firstName.trim(),
       lastName: formValue.lastName.trim(),
-      role: this.selectedRole || 'organizer', // Rôle par défaut pour l'accès aux photos
+      role: userRole, // 🆕 Utiliser le rôle déterminé
       agreeToTerms: formValue.agreeToTerms
     };
+
+    console.log('🔑 Creating account with role:', userRole, 'Context:', {
+      isPhotoAccessFlow: this.isPhotoAccessFlow,
+      isInvitedUser: this.isInvitedUser,
+      selectedRole: this.selectedRole
+    });
 
     this.authService.register(registerRequest).subscribe({
       next: (response) => {
@@ -205,7 +221,7 @@ export class RegisterComponent implements OnInit {
           }
           
           // Track the registration for analytics
-          this.trackRegistration(this.selectedRole || 'organizer');
+          this.trackRegistration(userRole);
           
         } else {
           this.isLoading = false;
@@ -307,7 +323,7 @@ export class RegisterComponent implements OnInit {
       
       // Redirection vers la connexion pour réessayer l'association
       setTimeout(() => {
-        this.router.navigate(['/auth/login'], { 
+        this.router.navigate(['/login'], { 
           queryParams: { 
             redirectTo: 'my-purchases',
             reason: 'photo-access'
@@ -343,7 +359,7 @@ export class RegisterComponent implements OnInit {
   }
 
   // Track registration for analytics (placeholder for future implementation)
-  private trackRegistration(role: 'organizer' | 'admin'): void {
+  private trackRegistration(role: 'organizer' | 'admin' | 'client'): void {
     // This could be connected to Google Analytics, Mixpanel, etc.
     console.log(`User registered with role: ${role}`);
   }
@@ -389,22 +405,22 @@ export class RegisterComponent implements OnInit {
   // 🆕 Méthodes d'aide pour l'UI d'accès aux photos
   shouldShowRoleSelection(): boolean {
     // Ne pas montrer la sélection de rôle pour l'accès aux photos
-    return !this.isPhotoAccessFlow && !this.isInvitedUser;
+    return !this.isPhotoAccessFlow && !this.isInvitedUser && !this.selectedRole;
   }
 
   getPageTitle(): string {
     if (this.isPhotoAccessFlow) {
-      return 'Créer un compte pour accéder à vos photos';
+      return 'Créer un compte client';
     }
     if (this.isInvitedUser) {
-      return 'Créer un compte pour rejoindre l\'événement';
+      return 'Accepter l\'invitation';
     }
-    return 'Inscription';
+    return 'Créer votre compte';
   }
 
   getPageDescription(): string {
     if (this.isPhotoAccessFlow) {
-      return 'Créez votre compte pour voir et télécharger les photos que vous venez d\'acheter.';
+      return 'Créez votre compte pour conserver l\'accès à vos photos achetées.';
     }
     if (this.isInvitedUser && this.invitationInfo) {
       return `Vous êtes invité à rejoindre l'événement "${this.invitationInfo.eventName}".`;
@@ -423,6 +439,6 @@ export class RegisterComponent implements OnInit {
       queryParams.reason = 'photo-access';
     }
     
-    this.router.navigate(['/auth/login'], { queryParams });
+    this.router.navigate(['/login'], { queryParams }); // 🆕 CORRECTION : /login au lieu de /auth/login
   }
 }

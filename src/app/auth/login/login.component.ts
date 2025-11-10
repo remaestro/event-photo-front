@@ -165,7 +165,7 @@ export class LoginComponent implements OnInit {
   /**
    * Gérer la redirection après connexion avec gestion des achats de photos
    */
-  private async handlePostLoginRedirect(role: 'Organizer' | 'Admin', userEmail?: string): Promise<void> {
+  private async handlePostLoginRedirect(role: 'Organizer' | 'Admin' | 'Client', userEmail?: string): Promise<void> {
     // Si c'est un flow d'accès aux photos et qu'on a un sessionId
     if (this.isPhotoAccessFlow && this.pendingSessionId && userEmail) {
       try {
@@ -208,11 +208,14 @@ export class LoginComponent implements OnInit {
   /**
    * Rediriger l'utilisateur vers le bon dashboard selon son rôle
    */
-  private redirectUserByRole(role: 'Organizer' | 'Admin'): void {
+  private redirectUserByRole(role: 'Organizer' | 'Admin' | 'Client'): void {
     if (role === 'Admin') {
       this.router.navigate(['/admin/dashboard']);
     } else if (role === 'Organizer') {
       this.router.navigate(['/organizer/dashboard']);
+    } else if (role === 'Client') {
+      // 🆕 Rediriger les clients vers leurs achats ou l'accès aux événements
+      this.router.navigate(['/my-purchases']);
     } else {
       this.router.navigate(['/']);
     }

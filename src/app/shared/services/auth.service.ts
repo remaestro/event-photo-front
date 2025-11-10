@@ -8,7 +8,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'Organizer' | 'Admin';  // Capitalisation corrigée pour correspondre au backend
+  role: 'Organizer' | 'Admin' | 'Client';  // 🆕 Ajout du rôle Client
   isEmailVerified: boolean;
   createdAt: Date;
   lastLoginAt?: Date;
@@ -20,7 +20,7 @@ export interface RegisterRequest {
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  role: 'organizer' | 'admin';  // API request utilise minuscules
+  role: 'organizer' | 'admin' | 'client';  // 🆕 Ajout du rôle client
   agreeToTerms: boolean;
 }
 
@@ -87,7 +87,8 @@ export class AuthService {
             email: response.user.email,
             firstName: response.user.firstName,
             lastName: response.user.lastName,
-            role: response.user.role === 'organizer' ? 'Organizer' : 'Admin',
+            role: response.user.role === 'organizer' ? 'Organizer' : 
+                  response.user.role === 'admin' ? 'Admin' : 'Client',
             isEmailVerified: response.user.isEmailVerified,
             createdAt: new Date()
           };
@@ -133,9 +134,9 @@ export class AuthService {
             email: response.user.email,
             firstName: response.user.firstName,
             lastName: response.user.lastName,
-            // Convert backend role to proper case: 'organizer' -> 'Organizer', 'admin' -> 'Admin'
+            // Convert backend role to proper case: 'organizer' -> 'Organizer', 'admin' -> 'Admin', 'client' -> 'Client'
             role: response.user.role === 'organizer' ? 'Organizer' : 
-                  response.user.role === 'admin' ? 'Admin' : 'Organizer',
+                  response.user.role === 'admin' ? 'Admin' : 'Client',
             isEmailVerified: response.user.isEmailVerified,
             createdAt: new Date(),
             lastLoginAt: new Date()
@@ -239,7 +240,7 @@ export class AuthService {
   /**
    * Obtenir le rôle de l'utilisateur actuel
    */
-  getUserRole(): 'Organizer' | 'Admin' | null {
+  getUserRole(): 'Organizer' | 'Admin' | 'Client' | null {
     const user = this.getCurrentUser();
     return user ? user.role : null;
   }
@@ -264,8 +265,9 @@ export class AuthService {
           email: request.email,
           firstName: request.firstName,
           lastName: request.lastName,
-          // Convert API role to proper case: 'organizer' -> 'Organizer', 'admin' -> 'Admin'
-          role: request.role === 'organizer' ? 'Organizer' : 'Admin',
+          // Convert API role to proper case: 'organizer' -> 'Organizer', 'admin' -> 'Admin', 'client' -> 'Client'
+          role: request.role === 'organizer' ? 'Organizer' : 
+                request.role === 'admin' ? 'Admin' : 'Client',
           isEmailVerified: false,
           createdAt: new Date()
         };
@@ -429,7 +431,8 @@ export class AuthService {
             email: response.user.email,
             firstName: response.user.firstName,
             lastName: response.user.lastName,
-            role: response.user.role === 'organizer' ? 'Organizer' : 'Admin',
+            role: response.user.role === 'organizer' ? 'Organizer' : 
+                  response.user.role === 'admin' ? 'Admin' : 'Client',
             isEmailVerified: response.user.isEmailVerified,
             createdAt: new Date(),
             lastLoginAt: new Date()
