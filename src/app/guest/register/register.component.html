@@ -1,0 +1,167 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full">
+    
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="!isLoading && errorMessage && !eventName" class="bg-white rounded-lg shadow-xl p-8 text-center">
+      <div class="text-6xl mb-4">❌</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Erreur</h2>
+      <p class="text-gray-600">{{ errorMessage }}</p>
+    </div>
+
+    <!-- Registration Form -->
+    <div *ngIf="!isLoading && eventName && !registrationSuccess" class="bg-white rounded-lg shadow-xl overflow-hidden">
+      <!-- Header with event info -->
+      <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
+        <div class="text-5xl mb-4">🎉</div>
+        <h1 class="text-2xl font-bold mb-2">Inscription à l'événement</h1>
+        <p class="text-blue-100 text-lg font-semibold">{{ eventName }}</p>
+        <div class="mt-3 space-y-1">
+          <p class="text-sm text-blue-100" *ngIf="eventDate">📅 {{ eventDate }}</p>
+          <p class="text-sm text-blue-100" *ngIf="eventLocation">📍 {{ eventLocation }}</p>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form (ngSubmit)="onSubmit()" class="p-8">
+        <p class="text-gray-600 mb-6 text-center">
+          Inscrivez-vous pour recevoir vos photos de l'événement
+        </p>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm text-red-800">{{ errorMessage }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <!-- Nom complet -->
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+              Nom complet <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="name"
+              name="name"
+              [(ngModel)]="guestData.name"
+              placeholder="Jean Dupont"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+              Email <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="email" 
+              id="email"
+              name="email"
+              [(ngModel)]="guestData.email"
+              placeholder="jean.dupont@example.com"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+            <p class="text-xs text-gray-500 mt-1">Vous recevrez vos photos par email</p>
+          </div>
+
+          <!-- Téléphone -->
+          <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+              Téléphone
+            </label>
+            <input 
+              type="tel" 
+              id="phone"
+              name="phone"
+              [(ngModel)]="guestData.phone"
+              placeholder="+33 6 12 34 56 78"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+          </div>
+
+          <!-- WhatsApp -->
+          <div>
+            <label for="whatsapp" class="block text-sm font-medium text-gray-700 mb-2">
+              WhatsApp
+            </label>
+            <input 
+              type="tel" 
+              id="whatsapp"
+              name="whatsapp"
+              [(ngModel)]="guestData.whatsApp"
+              placeholder="+33 6 12 34 56 78"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+            <p class="text-xs text-gray-500 mt-1">Optionnel : pour recevoir les notifications WhatsApp</p>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-4">
+          <span class="text-red-500">*</span> Au moins un email ou téléphone est requis
+        </p>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit"
+          [disabled]="isSubmitting"
+          [class.opacity-50]="isSubmitting"
+          [class.cursor-not-allowed]="isSubmitting"
+          class="mt-6 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
+          <svg *ngIf="isSubmitting" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span *ngIf="!isSubmitting">S'inscrire à l'événement</span>
+          <span *ngIf="isSubmitting">Inscription en cours...</span>
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="bg-gray-50 px-8 py-4 text-center text-xs text-gray-500">
+        🔒 Vos informations sont sécurisées et utilisées uniquement pour cet événement
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div *ngIf="registrationSuccess" class="bg-white rounded-lg shadow-xl p-8 text-center animate-fade-in">
+      <div class="text-6xl mb-4 animate-bounce">✅</div>
+      <h2 class="text-3xl font-bold text-green-600 mb-2">Inscription réussie !</h2>
+      <p class="text-gray-600 mb-6">
+        Merci de vous être inscrit à <strong>{{ eventName }}</strong>
+      </p>
+      
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <p class="text-sm text-green-800">
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Vous recevrez un email avec le lien d'accès à vos photos
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <button 
+          (click)="registerAnother()"
+          class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all">
+          Inscrire une autre personne
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-4">
+        Le formulaire sera automatiquement réinitialisé dans quelques secondes...
+      </p>
+    </div>
+  </div>
+</div>

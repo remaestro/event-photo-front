@@ -163,6 +163,11 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/organizer/events', eventId, 'upload']);
   }
 
+  // 🆕 Gérer la liste d'invités de l'événement
+  manageGuestList(eventId: string) {
+    this.router.navigate(['/organizer/events', eventId, 'guest-list']);
+  }
+
   duplicateEvent(event: Event) {
     this.router.navigate(['/organizer/events/create'], {
       queryParams: { duplicate: event.id }

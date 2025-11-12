@@ -13,6 +13,11 @@ export const routes: Routes = [
     path: 'event-access', 
     loadComponent: () => import('./client/event-access/event-access.component').then(c => c.EventAccessComponent)
   },
+  // 🆕 Route pour l'auto-inscription des invités via QR code
+  { 
+    path: 'guest/register/:eventId', 
+    loadComponent: () => import('./guest/register/register.component').then(c => c.RegisterComponent)
+  },
   { 
     path: 'scan-results/:sessionId', 
     loadComponent: () => import('./client/scan-results/scan-results.component').then(c => c.ScanResultsComponent)
@@ -101,6 +106,12 @@ export const routes: Routes = [
   { 
     path: 'organizer/events/:id/upload', 
     loadComponent: () => import('./organizer/events/upload-photos/upload-photos.component').then(c => c.UploadPhotosComponent),
+    canActivate: [organizerGuard]
+  },
+  // 🆕 Route pour la gestion de la liste d'invités
+  { 
+    path: 'organizer/events/:eventId/guest-list', 
+    loadComponent: () => import('./organizer/guest-list/guest-list.component').then(c => c.GuestListComponent),
     canActivate: [organizerGuard]
   },
   { 
