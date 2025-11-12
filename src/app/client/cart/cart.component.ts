@@ -252,7 +252,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Continuer les achats
   continueShopping(): void {
-    this.router.navigate(['/events']);
+    this.router.navigate(['/event-access']); // 🆕 CORRECTION : route correcte pour parcourir les événements
   }
 
   // Obtenir le temps depuis l'ajout d'un article

@@ -91,12 +91,21 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-4">
                 <div>
-                  <h3 class="font-semibold text-gray-900">Commande #{{ purchase.id }}</h3>
-                  <p class="text-sm text-gray-600">{{ formatDate(purchase.purchaseDate) }}</p>
+                  <h3 class="font-semibold text-gray-900">{{ purchase.orderNumber || 'Commande #' + purchase.id }}</h3>
+                  <div class="space-y-1 text-sm text-gray-600">
+                    <p>📅 {{ formatDate(purchase.purchaseDate) }}</p>
+                    <p *ngIf="purchase.eventDate">🎉 Événement: {{ formatDateShort(purchase.eventDate) }}</p>
+                    <p *ngIf="purchase.eventLocation">📍 {{ purchase.eventLocation }}</p>
+                  </div>
                 </div>
-                <div class="flex items-center space-x-2">
+                
+                <!-- Payment Method Info -->
+                <div class="flex items-center space-x-2 bg-white px-3 py-2 rounded border">
                   <span class="text-2xl">📱</span>
-                  <span class="text-sm text-gray-600">Wave</span>
+                  <div class="text-sm">
+                    <p class="font-medium">{{ getPaymentMethodName(purchase.paymentMethod) }}</p>
+                    <p class="text-gray-500" *ngIf="purchase.waveTransactionId">{{ purchase.waveTransactionId }}</p>
+                  </div>
                 </div>
               </div>
               
@@ -104,6 +113,7 @@
                 <div class="text-right">
                   <p class="font-semibold text-gray-900">{{ formatCurrency(purchase.totalAmount) }}</p>
                   <p class="text-sm" [class]="getStatusColor(purchase)">{{ getStatusText(purchase) }}</p>
+                  <p class="text-xs text-gray-500" *ngIf="purchase.invoiceNumber">Facture: {{ purchase.invoiceNumber }}</p>
                 </div>
                 
                 <!-- Action Buttons -->
@@ -132,7 +142,7 @@
                     </span>
                   </button>
                   
-                  <button (click)="downloadInvoice(purchase)"
+                  <button (click)="showInvoice(purchase)"
                           class="px-3 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-sm">
                     📄 Facture
                   </button>
@@ -164,9 +174,15 @@
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div *ngFor="let photo of purchase.photos.slice(0, 6)" 
                    class="relative group">
-                <img [src]="photo.thumbnailUrl" 
+                <img [src]="getPhotoThumbnailUrl(photo)" 
                      [alt]="'Photo ' + photo.id"
                      class="w-full h-24 object-cover rounded border group-hover:opacity-75 transition-opacity">
+                
+                <!-- Photo Info Overlay -->
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-1 rounded-b opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p class="text-white text-xs font-medium truncate" *ngIf="photo.photoNumber">{{ photo.photoNumber }}</p>
+                  <p class="text-gray-200 text-xs">{{ formatCurrency(photo.price) }}</p>
+                </div>
                 
                 <!-- Download Button Overlay -->
                 <button *ngIf="isDownloadActive(purchase)"

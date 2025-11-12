@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { PhotoApiService, EventPhotoGroup, ApiPhoto } from '../../services/photo-api.service';
-import { ImageUrlService } from '../../services/image-url.service';
+import { PhotoPurchaseService, PhotoPurchase } from '../../services/photo-purchase.service'; // 🆕
+import { NotificationService } from '../../services/notification.service'; // 🆕
+import { environment } from '../../../../environments/environment'; // 🆕
 
 interface Photo {
   id: string;
+  photoId: string; // 🆕 ID numérique pour l'API
   eventId: string;
   eventName: string;
   url: string;
@@ -18,6 +20,8 @@ interface Photo {
   isPurchased: boolean;
   purchaseDate?: string;
   downloadUrl?: string;
+  filename?: string; // 🆕
+  photoNumber?: string; // 🆕
 }
 
 interface PhotosByEvent {
@@ -37,9 +41,11 @@ interface PhotosByEvent {
 export class MyPhotosComponent implements OnInit {
   isLoading = true;
   userRole: string | null = null;
+  userEmail: string | null = null; // 🆕
   photosByEvent: PhotosByEvent[] = [];
   totalPhotos = 0;
   totalEvents = 0;
+  downloadingPhotos: Set<string> = new Set(); // 🆕
 
   // Filtres et tri
   selectedFilter = 'all'; // 'all', 'uploaded', 'purchased'
@@ -51,157 +57,167 @@ export class MyPhotosComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private photoApiService: PhotoApiService,
-    private imageUrlService: ImageUrlService,
+    private photoPurchaseService: PhotoPurchaseService, // 🆕
+    private notificationService: NotificationService, // 🆕
     public router: Router
   ) {}
 
   ngOnInit() {
     const currentUser = this.authService.getCurrentUser();
     this.userRole = currentUser?.role || null;
-    this.loadMyPhotos();
+    this.userEmail = currentUser?.email || null;
+    
+    // 🆕 Charger les photos achetées depuis les achats
+    this.loadPurchasedPhotos();
   }
 
-  private loadMyPhotos() {
-    if (!this.authService.isAuthenticated()) {
+  // 🆕 Charger toutes les photos distinctes achetées par l'utilisateur
+  private loadPurchasedPhotos() {
+    if (!this.authService.isAuthenticated() || !this.userEmail) {
       this.router.navigate(['/login']);
       return;
     }
 
-    const sortBy = this.getSortBy();
-    const sortOrder = this.getSortOrder();
-    
-    // Utiliser l'API pour récupérer les vraies photos
-    this.photoApiService.getMyPhotos(1, 50, undefined, sortBy, sortOrder)
-      .subscribe({
-        next: (response) => {
-          if (response.events && response.events.length > 0) {
-            this.photosByEvent = this.mapApiResponseToLocal(response.events);
-            this.totalPhotos = response.totalPhotos;
-            this.totalEvents = response.totalEvents;
-          } else {
-            this.loadMockData();
+    this.isLoading = true;
+    console.log('📸 Loading purchased photos for:', this.userEmail);
+
+    // Charger les achats de l'utilisateur
+    this.photoPurchaseService.getUserPurchases(this.userEmail).subscribe({
+      next: (purchases: PhotoPurchase[]) => {
+        console.log('✅ Purchases loaded:', purchases.length);
+        
+        if (purchases.length > 0) {
+          // 🆕 Extraire toutes les photos uniques de tous les achats
+          this.extractUniquePhotos(purchases);
+        } else {
+          // Pas d'achats trouvés
+          this.photosByEvent = [];
+          this.totalPhotos = 0;
+          this.totalEvents = 0;
+        }
+        
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading purchases:', error);
+        this.notificationService.error(
+          'Erreur de chargement',
+          'Impossible de charger vos photos achetées.'
+        );
+        this.isLoading = false;
+      }
+    });
+  }
+
+  // 🆕 Extraire toutes les photos uniques de tous les achats et les regrouper par événement
+  private extractUniquePhotos(purchases: PhotoPurchase[]) {
+    const photoMap = new Map<string, Photo>(); // Pour dédupliquer par photoId
+    const eventMap = new Map<string, PhotosByEvent>(); // Pour regrouper par événement
+
+    purchases.forEach(purchase => {
+      purchase.photos.forEach(purchasedPhoto => {
+        const photoId = this.extractPhotoId(purchasedPhoto);
+        
+        if (photoId && !photoMap.has(photoId)) {
+          // Créer l'objet Photo
+          const photo: Photo = {
+            id: photoId,
+            photoId: photoId,
+            eventId: purchasedPhoto.eventId || purchase.eventId,
+            eventName: purchasedPhoto.eventName || purchase.eventName,
+            url: this.getPhotoOriginalUrl(photoId), // 🆕 URL ORIGINALE sans watermark
+            thumbnailUrl: this.getPhotoThumbnailUrl(photoId),
+            tags: [],
+            description: purchasedPhoto.filename || `Photo ${photoId}`,
+            price: purchasedPhoto.price,
+            isPurchased: true,
+            purchaseDate: new Date(purchase.purchaseDate).toISOString(),
+            downloadUrl: this.getPhotoOriginalUrl(photoId),
+            filename: purchasedPhoto.filename,
+            photoNumber: purchasedPhoto.photoNumber
+          };
+
+          photoMap.set(photoId, photo);
+
+          // Regrouper par événement
+          const eventId = photo.eventId;
+          if (!eventMap.has(eventId)) {
+            eventMap.set(eventId, {
+              eventId: eventId,
+              eventName: photo.eventName,
+              eventDate: purchase.purchaseDate.toString(),
+              photos: []
+            });
           }
-          
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors du chargement des photos:', error);
-          
-          // En cas d'erreur, revenir aux données mockées pour le développement
-          this.loadMockData();
-          this.isLoading = false;
+
+          eventMap.get(eventId)!.photos.push(photo);
         }
       });
-  }
+    });
 
-  private loadMockData() {
-    if (this.userRole === 'Organizer') {
-      // Simuler les photos d'organisateur basées sur les événements réels
-      this.photosByEvent = [
-        {
-          eventId: '1',
-          eventName: 'Mon Premier Événement',
-          eventDate: '2024-07-15',
-          photos: this.generateMockPhotos('1', 'Mon Premier Événement', false)
-        }
-      ];
-    } else {
-      // Simuler les photos achetées
-      this.photosByEvent = [
-        {
-          eventId: '1',
-          eventName: 'Mariage de Sophie',
-          eventDate: '2024-06-15',
-          photos: this.generateMockPhotos('1', 'Mariage de Sophie', true)
-        },
-        {
-          eventId: '2',
-          eventName: 'Festival de musique',
-          eventDate: '2024-06-08',
-          photos: this.generateMockPhotos('2', 'Festival de musique', true)
-        }
-      ];
-    }
+    // Convertir les maps en tableaux
+    this.photosByEvent = Array.from(eventMap.values());
+    this.totalPhotos = photoMap.size;
+    this.totalEvents = eventMap.size;
 
-    this.calculateTotals();
+    // Appliquer le tri
     this.applySorting();
+
+    console.log('📊 Unique photos extracted:', this.totalPhotos, 'from', this.totalEvents, 'events');
   }
 
-  private mapApiResponseToLocal(events: EventPhotoGroup[]): PhotosByEvent[] {
-    return events.map(event => ({
-      eventId: event.eventId,
-      eventName: event.eventName,
-      eventDate: event.eventDate,
-      photos: event.photos.map(photo => this.mapApiPhotoToLocal(photo, event.eventName))
-    }));
+  // 🆕 Extraire l'ID de la photo depuis différentes sources
+  private extractPhotoId(photo: any): string | null {
+    if (photo.photoId) return photo.photoId.toString();
+    if (photo.id && !isNaN(Number(photo.id))) return photo.id.toString();
+    
+    // Extraire depuis l'URL si disponible
+    if (photo.thumbnailUrl) {
+      const idFromUrl = this.extractPhotoIdFromUrl(photo.thumbnailUrl);
+      if (idFromUrl) return idFromUrl;
+    }
+    
+    if (photo.photoUrl) {
+      const idFromUrl = this.extractPhotoIdFromUrl(photo.photoUrl);
+      if (idFromUrl) return idFromUrl;
+    }
+    
+    return null;
   }
 
-  private mapApiPhotoToLocal(apiPhoto: ApiPhoto, eventName: string): Photo {
-    return {
-      id: apiPhoto.id,
-      eventId: apiPhoto.id, // Utilisé comme fallback
-      eventName: eventName,
-      url: this.imageUrlService.getOriginalUrl(apiPhoto.id), // HAUTE QUALITÉ SANS WATERMARK
-      thumbnailUrl: this.imageUrlService.getThumbnailUrl(apiPhoto.id), // Miniature pour la grille
-      tags: apiPhoto.tags,
-      description: `${apiPhoto.filename}`,
-      price: apiPhoto.pricing.digital,
-      isPurchased: this.userRole !== 'Organizer', // Pour les organisateurs, ce sont leurs photos uploadées
-      purchaseDate: this.userRole !== 'Organizer' ? '2024-06-20' : undefined,
-      downloadUrl: this.userRole !== 'Organizer' ? this.imageUrlService.getOriginalUrl(apiPhoto.id) : undefined
-    };
-  }
-
-  private getSortBy(): string {
-    switch (this.selectedSort) {
-      case 'date-desc':
-      case 'date-asc':
-        return 'date';
-      case 'event-name':
-        return 'name';
-      default:
-        return 'date';
+  // 🆕 Extraire l'ID depuis une URL Azure
+  private extractPhotoIdFromUrl(url: string): string | null {
+    if (!url) return null;
+    
+    try {
+      const photoMatch = url.match(/\/photos\/(\d+)\//);
+      if (photoMatch) return photoMatch[1];
+      
+      const eventMatch = url.match(/\/events\/(\d+)\//);
+      if (eventMatch) return eventMatch[1];
+      
+      const filenameMatch = url.match(/\/([^\/]+)\.(jpg|jpeg|png|gif)$/i);
+      if (filenameMatch) {
+        const filename = filenameMatch[1];
+        const idMatch = filename.match(/(\d+)/);
+        if (idMatch) return idMatch[1];
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
     }
   }
 
-  private getSortOrder(): string {
-    return this.selectedSort.includes('desc') ? 'desc' : 'asc';
+  // 🆕 Obtenir l'URL de la photo originale SANS WATERMARK via l'API backend
+  private getPhotoOriginalUrl(photoId: string): string {
+    return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
   }
 
-  // Conserver les méthodes existantes pour la compatibilité
-  private generateMockPhotos(eventId: string, eventName: string, isPurchased: boolean): Photo[] {
-    const photoCount = Math.floor(Math.random() * 10) + 5;
-    const photos: Photo[] = [];
-
-    for (let i = 1; i <= photoCount; i++) {
-      photos.push({
-        id: `${eventId}-${i}`,
-        eventId,
-        eventName,
-        url: `https://picsum.photos/800/600?random=${eventId}-${i}`,
-        thumbnailUrl: `https://picsum.photos/300/200?random=${eventId}-${i}`,
-        tags: this.getRandomTags(),
-        description: `Photo ${i} de ${eventName}`,
-        price: 5.0,
-        isPurchased,
-        purchaseDate: isPurchased ? '2024-06-20' : undefined,
-        downloadUrl: isPurchased ? `https://example.com/download/${eventId}-${i}` : undefined
-      });
-    }
-
-    return photos;
-  }
-
-  private getRandomTags(): string[] {
-    const allTags = ['portrait', 'groupe', 'famille', 'danse', 'sourire', 'extérieur', 'intérieur'];
-    const count = Math.floor(Math.random() * 3) + 1;
-    return allTags.sort(() => 0.5 - Math.random()).slice(0, count);
-  }
-
-  private calculateTotals() {
-    this.totalEvents = this.photosByEvent.length;
-    this.totalPhotos = this.photosByEvent.reduce((sum, event) => sum + event.photos.length, 0);
+  // 🆕 MODIFICATION : Utiliser la qualité originale pour l'affichage dans la grille (pas de thumbnail)
+  private getPhotoThumbnailUrl(photoId: string): string {
+    // 🎨 Retourner la photo ORIGINALE en haute qualité pour les photos achetées
+    return `${environment.apiUrl}/api/Photo/${photoId}/serve?quality=original`;
   }
 
   private applySorting() {
@@ -219,38 +235,82 @@ export class MyPhotosComponent implements OnInit {
   }
 
   onFilterChange() {
-    this.loadMyPhotos(); // Recharger avec les nouveaux filtres
+    // Recharger avec les nouveaux filtres si nécessaire
+    this.applySorting();
   }
 
   onSortChange() {
-    this.loadMyPhotos(); // Recharger avec le nouveau tri
+    this.applySorting();
   }
 
+  // 🆕 Télécharger une photo originale sans watermark
   downloadPhoto(photo: Photo) {
-    if (photo.isPurchased && photo.downloadUrl) {
-      if (photo.downloadUrl.startsWith('/api/')) {
-        // Vraie photo : utiliser le service API
-        this.photoApiService.downloadPhoto(photo.id).subscribe({
-          next: (blob) => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = photo.description || `photo-${photo.id}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-          },
-          error: (error) => {
-            console.error('Erreur lors du téléchargement:', error);
-            alert('Erreur lors du téléchargement de la photo');
-          }
-        });
-      } else {
-        // Photo mockée : ouvrir dans un nouvel onglet
-        window.open(photo.downloadUrl, '_blank');
-      }
+    if (!photo.isPurchased || !photo.photoId) {
+      this.notificationService.warning(
+        'Téléchargement impossible',
+        'Cette photo n\'est pas disponible au téléchargement.'
+      );
+      return;
     }
+
+    this.downloadingPhotos.add(photo.id);
+
+    try {
+      // Créer un lien de téléchargement vers l'API backend
+      const downloadUrl = `${environment.apiUrl}/api/Photo/${photo.photoId}/serve?quality=original`;
+      const fileName = photo.filename || `photo-${photo.photoId}.jpg`;
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.notificationService.success(
+        'Téléchargement réussi',
+        'La photo a été téléchargée avec succès.'
+      );
+      
+      console.log('✅ Photo download initiated:', fileName);
+    } catch (error) {
+      console.error('❌ Download failed:', error);
+      this.notificationService.error(
+        'Erreur de téléchargement',
+        'Erreur lors du téléchargement. Veuillez réessayer.'
+      );
+    } finally {
+      this.downloadingPhotos.delete(photo.id);
+    }
+  }
+
+  // 🆕 Télécharger toutes les photos d'un événement
+  downloadAllPhotosFromEvent(event: PhotosByEvent) {
+    if (!event.photos || event.photos.length === 0) {
+      this.notificationService.warning(
+        'Aucune photo',
+        'Cet événement ne contient aucune photo.'
+      );
+      return;
+    }
+
+    this.notificationService.info(
+      'Téléchargement en cours',
+      `Le téléchargement de ${event.photos.length} photos va commencer...`
+    );
+
+    // Télécharger toutes les photos avec un délai échelonné
+    event.photos.forEach((photo, index) => {
+      setTimeout(() => {
+        this.downloadPhoto(photo);
+      }, index * 300); // 300ms entre chaque téléchargement
+    });
+  }
+
+  // 🆕 Méthodes pour les organisateurs (stub pour compatibilité avec le template)
+  createEvent() {
+    this.router.navigate(['/organizer/events/create']);
   }
 
   manageEvent(eventId: string) {
@@ -263,10 +323,6 @@ export class MyPhotosComponent implements OnInit {
     if (this.userRole === 'Organizer') {
       this.router.navigate(['/organizer/events', eventId, 'upload']);
     }
-  }
-
-  createEvent() {
-    this.router.navigate(['/organizer/events/create']);
   }
 
   exploreEvents() {
@@ -283,34 +339,26 @@ export class MyPhotosComponent implements OnInit {
   }
 
   get pageTitle(): string {
-    if (this.userRole === 'Organizer') {
-      return 'Mes Photos - Événements créés';
-    } else {
-      return 'Mes Photos - Photos achetées';
-    }
+    return 'Mes Photos - Photos achetées';
   }
 
   get pageDescription(): string {
-    if (this.userRole === 'Organizer') {
-      return 'Gérez toutes les photos de vos événements';
-    } else {
-      return 'Accédez à toutes vos photos achetées';
-    }
+    return 'Accédez à toutes vos photos achetées en haute qualité';
   }
 
   /**
    * Handle image load errors
    */
   onImageError = (event: any): void => {
-    this.imageUrlService.onImageError(event);
+    console.warn('❌ Image failed to load:', event.target.src);
+    event.target.style.display = 'none';
   }
 
   /**
    * Handle successful image load
    */
   onImageLoad = (event: any): void => {
-    console.log('Image chargée avec succès:', event.target.src);
-    // S'assurer que l'image est visible
+    console.log('✅ Image loaded successfully:', event.target.src);
     event.target.style.display = 'block';
     event.target.style.opacity = '1';
   }
@@ -321,7 +369,6 @@ export class MyPhotosComponent implements OnInit {
   viewPhoto(photo: Photo) {
     this.selectedPhotoForView = photo;
     this.showPhotoModal = true;
-    // Empêcher le scroll de la page quand la modal est ouverte
     document.body.style.overflow = 'hidden';
   }
 
@@ -331,7 +378,6 @@ export class MyPhotosComponent implements OnInit {
   closePhotoModal() {
     this.showPhotoModal = false;
     this.selectedPhotoForView = null;
-    // Réactiver le scroll de la page
     document.body.style.overflow = 'auto';
   }
 
@@ -351,5 +397,10 @@ export class MyPhotosComponent implements OnInit {
     if (event.key === 'Escape' && this.showPhotoModal) {
       this.closePhotoModal();
     }
+  }
+
+  // 🆕 Vérifier si une photo est en cours de téléchargement
+  isDownloading(photoId: string): boolean {
+    return this.downloadingPhotos.has(photoId);
   }
 }

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { PhotoPurchaseService, PhotoPurchase } from '../../shared/services/photo-purchase.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { environment } from '../../../environments/environment'; // 🆕 Importer environment
 
 @Component({
   selector: 'app-my-purchases',
@@ -64,6 +65,15 @@ export class MyPurchasesComponent implements OnInit {
     if (!this.userEmail) return;
 
     this.photoPurchaseService.loadUserPurchases(this.userEmail);
+    
+    // 🆕 En mode développement, charger des données de démonstration si aucune donnée réelle n'est disponible
+    setTimeout(() => {
+      if (this.purchases.length === 0) {
+        console.log('🎭 Loading demo purchases for development...');
+        const demoPurchases = this.photoPurchaseService.createDemoPurchases(this.userEmail!);
+        this.photoPurchaseService.updatePurchases(demoPurchases);
+      }
+    }, 2000);
   }
 
   get filteredPurchases(): PhotoPurchase[] {
@@ -122,13 +132,15 @@ export class MyPurchasesComponent implements OnInit {
     this.downloadingItems.add(downloadKey);
 
     try {
-      const response = await this.photoPurchaseService.downloadPhoto(purchase.id, photo.id).toPromise();
-      
-      if (response) {
-        // Créer un lien de téléchargement avec l'URL fournie par l'API
+      // 🆕 CORRECTION : Utiliser l'API backend pour télécharger la photo originale sans watermark
+      const photoId = this.extractPhotoId(photo);
+      if (photoId) {
+        const downloadUrl = `${this.getApiUrl()}/api/Photo/${photoId}/serve?quality=original`;
+        const fileName = photo.filename || `photo-${photoId}.jpg`;
+        
         const link = document.createElement('a');
-        link.href = (response as any).downloadUrl;
-        link.download = `photo-${photo.id}-${purchase.id}.jpg`;
+        link.href = downloadUrl;
+        link.download = fileName;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
@@ -138,6 +150,10 @@ export class MyPurchasesComponent implements OnInit {
           'Téléchargement réussi',
           'La photo a été téléchargée avec succès.'
         );
+        
+        console.log('✅ Photo download initiated:', fileName);
+      } else {
+        throw new Error('Photo ID not found');
       }
     } catch (error) {
       console.error('Download failed:', error);
@@ -163,23 +179,34 @@ export class MyPurchasesComponent implements OnInit {
     this.downloadingItems.add(downloadKey);
 
     try {
-      const response = await this.photoPurchaseService.downloadAllPhotos(purchase.id).toPromise();
+      // 🆕 CORRECTION : Télécharger toutes les photos une par une avec délai échelonné
+      console.log('📦 Starting bulk download of', purchase.photos.length, 'photos');
       
-      if (response) {
-        // Créer un lien de téléchargement pour le ZIP
-        const link = document.createElement('a');
-        link.href = (response as any).downloadUrl;
-        link.download = `photos-${purchase.eventName}-${purchase.id}.zip`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        this.notificationService.success(
-          'Téléchargement groupé réussi',
-          'Toutes les photos ont été téléchargées avec succès.'
-        );
-      }
+      purchase.photos.forEach((photo, index) => {
+        setTimeout(() => {
+          const photoId = this.extractPhotoId(photo);
+          if (photoId) {
+            const downloadUrl = `${this.getApiUrl()}/api/Photo/${photoId}/serve?quality=original`;
+            const fileName = photo.filename || `photo-${photoId}.jpg`;
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log(`📥 Download ${index + 1}/${purchase.photos.length} initiated:`, fileName);
+          }
+        }, index * 300); // Échelonner avec 300ms entre chaque
+      });
+      
+      const totalTime = purchase.photos.length * 0.3;
+      this.notificationService.success(
+        'Téléchargement groupé réussi',
+        `Le téléchargement de ${purchase.photos.length} photos va commencer dans les ${totalTime.toFixed(1)} prochaines secondes.`
+      );
     } catch (error) {
       console.error('Batch download failed:', error);
       this.notificationService.error(
@@ -367,5 +394,90 @@ export class MyPurchasesComponent implements OnInit {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // 🆕 Méthodes helper pour les URLs d'images via l'API backend
+  getPhotoThumbnailUrl(photo: any): string {
+    const photoId = this.extractPhotoId(photo);
+    if (photoId) {
+      return `${this.getApiUrl()}/api/Photo/${photoId}/serve?quality=thumbnail`;
+    }
+    // Fallback vers l'URL originale (mais ne marchera probablement pas avec Azure privé)
+    return photo.thumbnailUrl || photo.photoUrl || '';
+  }
+
+  getPhotoWatermarkedUrl(photo: any): string {
+    const photoId = this.extractPhotoId(photo);
+    if (photoId) {
+      return `${this.getApiUrl()}/api/Photo/${photoId}/serve?quality=watermarked`;
+    }
+    return photo.photoUrl || photo.watermarkedUrl || '';
+  }
+
+  // 🆕 Extraire l'ID de la photo depuis différentes sources
+  private extractPhotoId(photo: any): string | null {
+    // Priorité 1: photoId direct
+    if (photo.photoId) {
+      return photo.photoId.toString();
+    }
+    
+    // Priorité 2: id
+    if (photo.id && !isNaN(Number(photo.id))) {
+      return photo.id.toString();
+    }
+    
+    // Priorité 3: Extraire depuis une URL Azure
+    if (photo.thumbnailUrl) {
+      const idFromUrl = this.extractPhotoIdFromUrl(photo.thumbnailUrl);
+      if (idFromUrl) return idFromUrl;
+    }
+    
+    if (photo.photoUrl) {
+      const idFromUrl = this.extractPhotoIdFromUrl(photo.photoUrl);
+      if (idFromUrl) return idFromUrl;
+    }
+    
+    console.warn('❌ Could not extract photo ID from:', photo);
+    return null;
+  }
+
+  // 🆕 Extraire l'ID de la photo depuis une URL Azure Blob Storage
+  private extractPhotoIdFromUrl(url: string): string | null {
+    if (!url) return null;
+    
+    try {
+      // Pattern 1: Extraire l'ID depuis le path /events/{eventId}/photos/{photoId}/
+      const photoMatch = url.match(/\/photos\/(\d+)\//);
+      if (photoMatch) {
+        return photoMatch[1];
+      }
+      
+      // Pattern 2: Extraire l'ID de l'événement depuis /events/{eventId}/
+      const eventMatch = url.match(/\/events\/(\d+)\//);
+      if (eventMatch) {
+        return eventMatch[1];
+      }
+      
+      // Pattern 3: Extraire un ID depuis le nom du fichier
+      const filenameMatch = url.match(/\/([^\/]+)\.(jpg|jpeg|png|gif)$/i);
+      if (filenameMatch) {
+        const filename = filenameMatch[1];
+        const idMatch = filename.match(/(\d+)/);
+        if (idMatch) {
+          return idMatch[1];
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Error extracting photo ID from URL:', url, error);
+      return null;
+    }
+  }
+
+  // 🆕 Obtenir l'URL de l'API
+  private getApiUrl(): string {
+    // Utiliser l'environnement pour obtenir l'URL de l'API
+    return environment.apiUrl; // À remplacer par environment.apiUrl
   }
 }
