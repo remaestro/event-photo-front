@@ -1,6 +1,11 @@
 {
   "routes": [
     {
+      "route": "/guest/register/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    },
+    {
       "route": "/register*",
       "serve": "/index.html",
       "statusCode": 200
