@@ -91,16 +91,27 @@ export class GuestListService {
   getGuestList(eventId: number): Observable<GuestList | null> {
     const headers = this.getAuthHeaders();
     
+    console.log('🔍 [GuestListService] Fetching guest list for event:', eventId);
+    console.log('🔑 [GuestListService] Auth headers:', headers.get('Authorization') ? 'Token present' : 'No token');
+    console.log('📡 [GuestListService] API URL:', `${this.apiUrl}/events/${eventId}/guest-list`);
+    
     return this.http.get<GuestList>(`${this.apiUrl}/events/${eventId}/guest-list`, { headers })
       .pipe(
         tap(guestList => {
+          console.log('✅ [GuestListService] Guest list received:', guestList);
+          console.log('👥 [GuestListService] Number of guests:', guestList?.guests?.length || 0);
           if (guestList) {
             this.guestListSubject.next(guestList);
           }
         }),
         catchError(error => {
-          console.error('Error fetching guest list:', error);
+          console.error('❌ [GuestListService] Error fetching guest list:', error);
+          console.error('📊 [GuestListService] Error status:', error.status);
+          console.error('📄 [GuestListService] Error message:', error.message);
+          console.error('🔍 [GuestListService] Full error:', error);
+          
           if (error.status === 404) {
+            console.warn('⚠️ [GuestListService] Guest list not found (404), returning null');
             return of(null); // Guest list doesn't exist yet
           }
           throw error;

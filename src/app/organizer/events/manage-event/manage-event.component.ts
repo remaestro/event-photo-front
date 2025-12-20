@@ -217,6 +217,10 @@ export class ManageEventComponent implements OnInit, OnDestroy {
     this.router.navigate(['/organizer/events', this.eventId, 'beneficiaries']);
   }
 
+  manageGuestList(): void {
+    this.router.navigate(['/organizer/events', this.eventId, 'guest-list']);
+  }
+
   viewAllPhotos(): void {
     this.router.navigate(['/organizer/photos'], {
       queryParams: { eventId: this.eventId }

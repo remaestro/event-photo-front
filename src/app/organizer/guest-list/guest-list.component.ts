@@ -104,20 +104,28 @@ export class GuestListComponent implements OnInit, OnDestroy {
 
   private loadGuestList() {
     this.isLoading = true;
+    console.log('🔄 [GuestListComponent] Loading guest list for event:', this.eventId);
+    
     this.guestListService.getGuestList(this.eventId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (guestList) => {
+          console.log('📦 [GuestListComponent] Received guest list:', guestList);
+          console.log('👥 [GuestListComponent] Guests array:', guestList?.guests);
+          console.log('🔢 [GuestListComponent] Number of guests:', guestList?.guests?.length || 0);
+          
           if (guestList) {
             this.guestList = guestList;
+            console.log('✅ [GuestListComponent] Guest list assigned to component');
           } else {
+            console.warn('⚠️ [GuestListComponent] Guest list is null, creating new one');
             // Créer une nouvelle liste si elle n'existe pas
             this.createNewGuestList();
           }
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error loading guest list:', error);
+          console.error('❌ [GuestListComponent] Error loading guest list:', error);
           this.notificationService.error('Erreur', 'Impossible de charger la liste d\'invités');
           this.isLoading = false;
         }

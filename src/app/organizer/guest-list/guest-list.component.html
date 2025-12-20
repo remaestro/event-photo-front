@@ -216,17 +216,28 @@
                 </td>
                 
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span *ngIf="!guest.invitationSent" 
+                  <!-- 🟡 Ajout manuel en attente d'invitation -->
+                  <span *ngIf="guest.addMethod === 'manual' && !guest.invitationSent" 
                         class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    En attente
+                    ⏳ En attente d'invitation
                   </span>
+                  
+                  <!-- 🟢 Auto-enregistré via QR code -->
+                  <span *ngIf="guest.addMethod === 'qrcode' && !guest.invitationSent" 
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    ✓ Enregistré (QR)
+                  </span>
+                  
+                  <!-- 🔵 Invitation envoyée mais pas encore accédé -->
                   <span *ngIf="guest.invitationSent && !guest.hasAccessed" 
                         class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    Invité
+                    📧 Invité
                   </span>
+                  
+                  <!-- 🟢 A accédé aux photos -->
                   <span *ngIf="guest.hasAccessed" 
-                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    A accédé
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                    👁️ A accédé
                   </span>
                 </td>
                 
