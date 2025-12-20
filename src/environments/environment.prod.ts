@@ -1,6 +1,7 @@
 export const environment = {
   production: true,
   apiUrl: 'https://event-photo-api-gwc2evhsdmf0f7eh.westeurope-01.azurewebsites.net',
+  frontendUrl: 'https://orange-ocean-001712e03.2.azurestaticapps.net', // 🆕 URL du frontend Azure
   cdnUrl: 'https://cdn.eventphoto.com',
   stripePublicKey: 'pk_live_production_key_here',
   waveApiKey: 'wave_ci_prod_AEkC8Ur43z5wqy8so3nw2B6AvoUD1udbZilvKNP-Jzv0mtP1hnKNzE6QtZU3NzLtY_MEepDWvvz803Xauuu9hw4wK4nTya0KAA',

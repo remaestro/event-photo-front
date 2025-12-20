@@ -6,6 +6,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { GuestListService, Guest, GuestList, AddGuestRequest } from '../../shared/services/guest-list.service';
 import { EventService } from '../../shared/services/event.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { environment } from '../../../environments/environment'; // 🆕 Import environment
 
 @Component({
   selector: 'app-guest-list',
@@ -37,6 +38,7 @@ export class GuestListComponent implements OnInit, OnDestroy {
   
   // QR Code
   qrCodeUrl: string = '';
+  selfRegisterUrl: string = ''; // 🆕 Pour afficher l'URL générée
   showQRCodeModal = false;
   
   // Sélection multiple pour envoi en masse
@@ -163,9 +165,20 @@ export class GuestListComponent implements OnInit, OnDestroy {
 
   // 🆕 Générer le QR Code pour l'auto-inscription
   private generateQRCode() {
-    const selfRegisterUrl = `${window.location.origin}/guest/register/${this.eventId}`;
-    // Utiliser une API de génération de QR code (ex: qrcode.js ou une API externe)
+    // Utiliser l'URL de l'environnement au lieu de window.location.origin
+    const baseUrl = environment.frontendUrl || window.location.origin;
+    const selfRegisterUrl = `${baseUrl}/guest/register/${this.eventId}`;
+    
+    // Debug: afficher l'URL générée dans la console et l'interface
+    console.log('🔗 URL générée pour le QR code:', selfRegisterUrl);
+    console.log('🌍 Base URL utilisée:', baseUrl);
+    console.log('🏗️ Environment:', environment.production ? 'Production' : 'Development');
+    
+    // Utiliser une API de génération de QR code
     this.qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(selfRegisterUrl)}`;
+    
+    // Stocker l'URL pour l'afficher dans l'interface
+    this.selfRegisterUrl = selfRegisterUrl;
   }
 
   // 🆕 Ajouter un invité manuellement
