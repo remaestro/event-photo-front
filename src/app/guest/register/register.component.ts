@@ -94,8 +94,10 @@ export class RegisterComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
     this.guestData.eventId = this.eventId;
+    this.guestData.addMethod = 'qrcode'; // Set the add method for QR code registration
 
-    this.guestListService.addGuest(this.guestData).subscribe({
+    // 🔧 Utiliser addGuestViaQrCode au lieu de addGuest pour permettre l'accès public
+    this.guestListService.addGuestViaQrCode(this.guestData).subscribe({
       next: (guest) => {
         console.log('Guest registered successfully:', guest);
         this.registrationSuccess = true;
