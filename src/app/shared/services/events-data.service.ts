@@ -192,4 +192,8 @@ export class EventsDataService {
   getPublicEvent(code: string): Observable<PublicEvent> {
     return this.http.get<PublicEvent>(`${this.baseUrl}/public/${code}`);
   }
+
+  getPublicEventById(id: number): Observable<PublicEvent> {
+    return this.http.get<PublicEvent>(`${this.baseUrl}/public/id/${id}`);
+  }
 }

@@ -61,23 +61,31 @@ export class RegisterComponent implements OnInit {
   }
 
   private loadEventInfo() {
-    this.eventService.getEventById(this.eventId.toString()).subscribe({
+    console.log('📡 [API] Calling public event endpoint for eventId:', this.eventId);
+    
+    this.eventService.getPublicEventInfo(this.eventId).subscribe({
       next: (event) => {
+        console.log('✅ [API] Public event info received:', event);
+        
         if (event) {
-          this.eventName = event.name;
+          this.eventName = event.title; // PublicEvent has 'title' property, not 'name'
           this.eventDate = new Date(event.date).toLocaleDateString('fr-FR', {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
           });
           this.eventLocation = event.location;
+          console.log('📝 [DATA] Event loaded:', { name: this.eventName, date: this.eventDate, location: this.eventLocation });
         } else {
+          console.error('❌ [ERROR] Event data is null');
           this.errorMessage = 'Événement introuvable';
         }
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading event:', error);
+        console.error('💥 [ERROR] Failed to load event:', error);
+        console.error('💥 [ERROR] Error status:', error.status);
+        console.error('💥 [ERROR] Error message:', error.message);
         this.errorMessage = 'Impossible de charger les informations de l\'événement';
         this.isLoading = false;
       }

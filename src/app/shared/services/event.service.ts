@@ -175,6 +175,13 @@ export class EventService {
     );
   }
 
+  /**
+   * Obtenir les informations publiques d'un événement (sans authentification)
+   */
+  getPublicEventInfo(eventId: number): Observable<any> {
+    return this.eventsDataService.getPublicEventById(eventId);
+  }
+
   // Helper methods to map API data to local interfaces
   private mapApiEventsToLocal(apiEvents: ApiEvent[]): Event[] {
     return apiEvents.map(apiEvent => this.mapApiEventToLocal(apiEvent));
