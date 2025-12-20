@@ -38,15 +38,25 @@ export class RegisterComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    console.log('🚀 [RegisterComponent] Component initialized');
+    console.log('📍 [URL] Current URL:', window.location.href);
+    console.log('🌐 [URL] Origin:', window.location.origin);
+    console.log('📱 [Device] User Agent:', navigator.userAgent);
+    
     const eventIdParam = this.route.snapshot.paramMap.get('eventId');
+    console.log('🔢 [EventID] Raw parameter:', eventIdParam);
+    
     this.eventId = eventIdParam ? parseInt(eventIdParam, 10) : 0;
+    console.log('🔢 [EventID] Parsed value:', this.eventId);
     
     if (!this.eventId) {
+      console.error('❌ [ERROR] Event ID is missing or invalid');
       this.errorMessage = 'Événement introuvable';
       this.isLoading = false;
       return;
     }
-
+    
+    console.log('✅ [EventID] Valid event ID, loading event info...');
     this.loadEventInfo();
   }
 
